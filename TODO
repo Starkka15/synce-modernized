@@ -1,0 +1,35 @@
+$Id: TODO 3987 2011-03-21 21:59:55Z mark_ellis $
+
+TODO for libsynce
+=================
+
+o Change logging to be able to use syslog and not only stderr
+
+o Put error codes in config file, not hard-coded in errors.c
+
+
+TODO for librapi2
+=================
+
+o Implement more of RAPI
+
+o Make config use synce_log and not perror.
+
+o Make the file system tools use "My Documents" as current directory.
+
+o Add tool "pcat"
+
+o Make SORTORDERSPEC stuff work in CeCreateDatabase()
+
+o Improve synce-install-cab script: 
+
+  I had to make a slight modification as the SmartPhone[0] expects
+  new CABs to exist in /IPSM/Windows/AppMgr rather than just
+  /Windows/AppMgr but once this change is made to the script it
+  works fine to install stuff.
+
+o Make the RAPI commands timeout of the connection is lost to the device
+
+o In rapi 1 CeReadRecordProps() and CeWriteRecordProps(), figure out how
+  to deal with CEVT_R8, and make use of rgPropID in CeReadRecordProps() 
+

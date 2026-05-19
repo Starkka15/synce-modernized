@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libsynce
+Description: The core library for SynCE, a framework to sync WinCE devices
+Version: @VERSION@
+Libs: -L${libdir} -lsynce
+Cflags: -I${includedir}

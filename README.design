@@ -1,0 +1,119 @@
+$Id: README.design 3986 2011-03-21 21:21:46Z mark_ellis $
+
+vim:textwidth=75
+
+==================
+DESIGN OF LIBRAPI2
+==================
+
+Overview
+--------
+o Design guidelines
+o Design goals 
+o Implementation of RAPI calls
+o Modules
+o Object-oriented design
+
+Module details
+--------------
+o rapi_buffer
+o rapi_context
+
+
+Design guidelines
+-----------------
+
+The design is not supposed to be perfect from the beginning, just better
+than the previous design. If something needs redesigning, you redesign it.
+
+
+Design goals
+------------
+
+o Merge the functionality of the previous three libraries into one
+o Requiring as little code as possible to implement a new RAPI function
+o Support both little endian and big endian platforms
+o Thread-safety
+o Support both 32- and 64-bit platforms
+
+
+
+Implementation of RAPI calls
+----------------------------
+
+The implementation of the actual RAPI calls are places in the following
+files in the src directory:
+
+rapi.h             Header file that declares all RAPI calls
+
+database.c         Database functions
+file_access.c      File access functions (create, read, write, etc)
+file_management.c  File management functions (copy, delete, find, etc)
+misc.c             Other functions (CeGetVersionEx, etc)
+rapi.c             Main functions (initialization etc)
+registry.c         Registry functions
+window.c           Window functions
+
+The best description of how to implement a RAPI call is found by looking at
+the already available RAPI calls.
+
+If you want to implement an ASCII version of a call, you append an 'A' to
+the end of the function name and wrap the real function. Many APIs in a
+certain commercial operating system has an 'A' (probably for "ASCII" or
+"ANSI") or a 'W' (for "wide") appended to separate different versions of
+the same function.
+
+
+Modules
+-------
+
+Some modules implement objects, as described below in "Object-oriented
+design". Other modules are just a collection of related functionality.
+
+All functions in a module begin with the module name and an underscore. A
+method called "bar" in module "rapi_foo" should be named rapi_foo_bar.
+
+The module rapi_foo has a header file called rapi_foo.h and
+an implementation file called rapi_foo.c.
+
+
+Object-oriented design
+----------------------
+
+An object is a special type of module. For an object of type RapiFoo, the
+module name is rapi_foo.
+
+Functions to create and destroy the object are always present in an object
+module, as shown with the RapiFoo object:
+
+  RapiFoo* rapi_foo_new();
+  void rapi_foo_free(RapiFoo* xyz);
+
+The RapiFoo data type is a structure. It can be either public or private.
+If the strucute is public, the contents are declared in the header file. If
+it is private, the header file only contains a forward declaration and the
+contents of the structure are declared in the implementation file.
+
+The current objects in librapi2 are:
+
+  RapiBuffer  (private)
+  RapiContext (public) 
+
+
+rapi_buffer
+-----------
+
+The purpose of the buffer object is to store data in the format that is
+used for network transport. See rapi_buffer.[hc] for details.
+
+
+rapi_context
+------------
+
+The context object contains information about the current RAPI session. See
+rapi_context.[hc] for details.
+
+The RapiContext structure is public and contains send and receive buffers,
+the socket used, and some data.
+
+

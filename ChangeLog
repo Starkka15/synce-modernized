@@ -1,0 +1,56 @@
+2013-07-25  Mark Ellis  <mark@mpellis.org.uk>
+
+	* 0.17 release
+
+2012-08-21  Mark Ellis  <mark@mpellis.org.uk>
+
+	* tools/pkillall.c - report error codes from CeKillAllApps
+
+2012-07-02  Mark Ellis  <mark@mpellis.org.uk>
+
+	* remove obsolete hal code
+
+2012-05-29  Mark Ellis  <mark@mpellis.org.uk>
+
+	* fix type error in udev-synce-serial
+	* 0.16 release
+
+2011-12-30  Mark Ellis  <mark@mpellis.org.uk>
+
+	* fix udev rules so rndis disconnects are recognised
+	* make libgudev optional, send disconnect to dccm from udev
+	  scripts but only act on it if we don't have gudev
+
+2011-12-28  Mark Ellis  <mark@mpellis.org.uk>
+
+	* rename config header and move to root of source
+
+2011-07-25  Mark Ellis  <mark@mpellis.org.uk>
+
+	* use gio instead of libgnet
+
+2011-07-25  Mark Ellis  <mark@mpellis.org.uk>
+
+	* configure.ac.in, dccm/synce-device.c - remove support for very
+	  old dbus-glib
+	* configure.ac.in - clean up checking for dbus
+
+2011-06-01  Mark Ellis  <mark@mpellis.org.uk>
+
+	* scripts/synceconnector.py.in - rename uses of hal-dccm to dccm
+	* configure.ac.in - disable file dccm, odccm and hal by default
+	* dccm/ - fix build of dccm
+
+2011-04-04  Mark Ellis  <mark@mpellis.org.uk>
+
+	* move connector components into core
+
+2011-03-22  Mark Ellis  <mark@mpellis.org.uk>
+
+	* combine libsynce and librapi into a single library object
+	* reorganise man page structure
+
+2011-03-21  Mark Ellis  <mark@mpellis.org.uk>
+
+	* begin combining libsynce and librapi to form synce-core package
+

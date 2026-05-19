@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.synce.dccm
+Exec=@LIBEXECDIR@/dccm --log-level=6
+User=root

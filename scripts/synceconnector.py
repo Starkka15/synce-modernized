@@ -5,7 +5,7 @@ import platform
 import re
 import subprocess
 import logging, logging.handlers
-import ConfigParser
+import configparser as ConfigParser
 import dbus
 
 DBUS_DBUS_BUSNAME       = "org.freedesktop.DBus"
@@ -69,9 +69,9 @@ def rndis_static_config(iface):
 
     # returns a Popen object
     try:
-        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         output_text = proc.communicate()[0]
-    except Exception,e:
+    except Exception as e:
         logger.error("failure running ifconfig: %s" % e)
         return False, False
 
@@ -107,9 +107,9 @@ def rndis_dhcp_config(iface):
 
     # returns a Popen object
     try:
-        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         output_text = proc.communicate()[0]
-    except Exception,e:
+    except Exception as e:
         logger.error("failure running dhclient: %s" % e)
         return False, False
 
@@ -119,10 +119,12 @@ def rndis_dhcp_config(iface):
         logger.error("dhclient failed with return code %d",rc)
         return False, False
 
+    if isinstance(output_text, bytes):
+        output_text = output_text.decode('utf-8', errors='replace')
     output_list = output_text.split('\n')
 
-    dhcp_ack_re = re.compile('DHCPACK .*from (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
-    dhcp_bound_re = re.compile('bound to (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+    dhcp_ack_re = re.compile(r'DHCPACK .*from (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+    dhcp_bound_re = re.compile(r'bound to (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
 
     for line in output_list:
         logger.debug("dhclient output: "+line)
@@ -159,9 +161,9 @@ def rndis_dhcp_unconfig(iface):
 
     # returns a Popen object
     try:
-        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         output_text = proc.communicate()[0]
-    except Exception,e:
+    except Exception as e:
         logger.error("failure running dhclient: %s" % e)
         return True
 
@@ -218,13 +220,13 @@ def serial_stop_device(linkname):
             f = open(pidfile, 'r')
             textpid = f.readline().rstrip()
             f.close()
-        except Exception, e:
+        except Exception as e:
             logger.warning("unable to read PID from %s: %s", pidfile, e)
             return False
 
         try:
             pid = int(textpid)
-        except Exception, e:
+        except Exception as e:
             logger.error("found invalid PID in %s: %s", pidfile, e)
             return False
 
@@ -232,7 +234,7 @@ def serial_stop_device(linkname):
 
         try:
             os.kill(pid, signal.SIGTERM)
-        except Exception,e:
+        except Exception as e:
             logger.error("unable stop the SynCE connection with PID %d: %s", pid, e)
             return False
 
@@ -263,9 +265,9 @@ def serial_start_device(device_file, local_ip, remote_ip, linkname):
 
     # returns a Popen object
     try:
-        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         output_text = proc.communicate()[0]
-    except Exception,e:
+    except Exception as e:
         logger.error("failure running pppd: %s" % e)
         return False
 
@@ -303,7 +305,7 @@ def run_dccm(device_path, device_ip, local_ip, rndis):
 
     try:
         os.execv("/usr/local/libexec/dccm", cmd_list)
-    except Exception,e:
+    except Exception as e:
         logger.error("failed to exec dccm !!: %s" % e)
 
     return
@@ -327,7 +329,7 @@ def signal_dccm_connect(device_path, device_ip, local_ip, rndis):
 
     try:
         dccm_manager = dbus.Interface(dbus.SystemBus().get_object(DBUS_SYNCE_BUSNAME, DBUS_SYNCE_MANAGER_OBJPATH), DBUS_SYNCE_MANAGER_IFACE)
-    except Exception,e:
+    except Exception as e:
         logger.critical("failed to connect to dccm device manager %s: %s" % (device_path, e))
         return False
 
@@ -341,7 +343,7 @@ def signal_dccm_connect(device_path, device_ip, local_ip, rndis):
 
     try:
         dccm_manager.DeviceConnected(device_path, device_ip, local_ip, rndis)
-    except Exception, e:
+    except Exception as e:
         logger.critical("failed to signal device connect to dccm device manager %s: %s" % (DBUS_SYNCE_MANAGER_OBJPATH, e))
         return False
 
@@ -366,7 +368,7 @@ def signal_dccm_disconnect(device_path):
 
     try:
         dccm_manager = dbus.Interface(dbus.SystemBus().get_object(DBUS_SYNCE_BUSNAME, DBUS_SYNCE_MANAGER_OBJPATH), DBUS_SYNCE_MANAGER_IFACE)
-    except Exception,e:
+    except Exception as e:
         logger.critical("failed to connect to dccm device manager %s: %s" % (device_path, e))
         return False
 
@@ -375,7 +377,7 @@ def signal_dccm_disconnect(device_path):
 
     try:
         dccm_manager.DeviceDisconnected(device_path)
-    except Exception, e:
+    except Exception as e:
         logger.critical("failed to signal device disconnect to dccm device manager %s: %s" % (DBUS_SYNCE_MANAGER_OBJPATH, e))
         return False
 
@@ -395,7 +397,7 @@ def process_config():
     config = ConfigParser.ConfigParser()
     try:
         config.read(config_file)
-    except Exception,e:
+    except Exception as e:
         logger.warning("failed to parse config file %s: %s" % (config_file, e))
         return False
 
@@ -419,7 +421,7 @@ def process_config():
     if config.has_option('rndis', 'static_device_ip'):
         new_ip = config.get('rndis', 'static_device_ip')
         
-        ip_re = re.compile('^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
+        ip_re = re.compile(r'^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
         ip_match = ip_re.match(new_ip)
         if ip_match != None:
             DEFAULT_RNDIS_DEVICE_IP = new_ip
@@ -429,7 +431,7 @@ def process_config():
     if config.has_option('rndis', 'static_local_ip'):
         new_ip = config.get('rndis', 'static_local_ip')
         
-        ip_re = re.compile('^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
+        ip_re = re.compile(r'^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
         ip_match = ip_re.match(new_ip)
         if ip_match != None:
             DEFAULT_RNDIS_LOCAL_IP = new_ip
@@ -439,7 +441,7 @@ def process_config():
     if config.has_option('rndis', 'static_netmask'):
         new_ip = config.get('rndis', 'static_netmask')
         
-        ip_re = re.compile('^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
+        ip_re = re.compile(r'^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
         ip_match = ip_re.match(new_ip)
         if ip_match != None:
             DEFAULT_RNDIS_NETMASK = new_ip
@@ -449,7 +451,7 @@ def process_config():
     if config.has_option('rndis', 'static_broadcast'):
         new_ip = config.get('rndis', 'static_broadcast')
         
-        ip_re = re.compile('^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
+        ip_re = re.compile(r'^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
         ip_match = ip_re.match(new_ip)
         if ip_match != None:
             DEFAULT_RNDIS_BROADCAST = new_ip
@@ -464,7 +466,7 @@ def process_config():
     if config.has_option('serial', 'network'):
         new_network = config.get('serial', 'network')
         
-        network_re = re.compile('^(\d{1,3}\.\d{1,3}\.\d{1,3}$)')
+        network_re = re.compile(r'^(\d{1,3}\.\d{1,3}\.\d{1,3}$)')
         network_match = network_re.match(new_network)
         if network_match != None:
             DEFAULT_SERIAL_NETWORK = new_network

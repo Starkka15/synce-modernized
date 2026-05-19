@@ -1,0 +1,11 @@
+$Id: BUGS 3986 2011-03-21 21:21:46Z mark_ellis $
+
+This file contains known limitations of librapi2. It is not complete and not
+guaranteed to be up to date.
+
+
+o Multi-threading
+
+  Librapi2 currently can't share connections between threads. This will be
+  changed in the future.
+

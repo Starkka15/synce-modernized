@@ -1,0 +1,42 @@
+How to contribute
+-----------------
+
+Contibutions to this project are always welcome. You can contribute in many
+different ways:
+
+o Testing
+o Donating
+o Sending patches
+o Answering questions on the mailing list
+
+
+Testing
+-------
+
+If you only compile librapi2, run the test programs, and report success or
+failure, then you have contributed to the development of SynCE!
+
+
+Donating
+--------
+
+Librapi2 is developed on an non-profit basis. A gift will encourage further
+development. To donate money to SynCE, please follow this link:
+
+  http://sourceforge.net/donate/index.php?group_id=30550	
+	
+Sending patches
+---------------
+
+A patch contains a fix for a bug or implements some missing functionality.
+
+If you submit lots of useful patches you will get access to the Subversion repository.
+
+Please not that patches should have the same license as the rest of the module,
+see the file LICENSE for details.
+
+
+Answering questions on the mailing list
+---------------------------------------
+
+Can't be that hard, can it? :-)

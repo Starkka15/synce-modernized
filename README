@@ -1,0 +1,38 @@
+The purpose of the SynCE project is to provide a means of communication with
+a Windows Mobile, or Windows CE, device from a computer running Linux,
+FreeBSD or a similar operating system.
+
+Libsynce is the core library for the SynCE project tools, containing various
+utility and helper functions, and an implementation of RAPI. It is required
+for all the major components of the project.
+
+The RAPI code is an open source implementation that works like RAPI.DLL,
+available on Microsoft operating systems. The library makes it possible to make
+remote calls to a computer running device. Documentation for the RAPI calls
+is available at this address:
+
+  http://msdn.microsoft.com/library/default.asp?url=/library/en-us/wcesdkr/htm/_wcesdk_CeRapiInit.asp
+
+In order to use rapi calls, a daemon that the device client connects to must be
+running on the computer using rapi.
+
+See README.contributing for information about contributing to this project.
+
+See README.design for information about the design of librapi2.
+
+See BUGS for documented limitations of librapi2.
+
+
+License
+-------
+
+MIT License, see the file LICENSE for details.
+
+
+Support
+-------
+
+Please visit the website for more information:
+
+  http://www.synce.org/
+

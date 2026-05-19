@@ -1,0 +1,24 @@
+# example config file, to use copy to @SYSCONFDIR@/synce-connector.conf
+
+[general]
+
+# global logging level, can be debug, info, warning, error, critical
+#loglevel: debug
+
+
+[serial]
+
+# options passed to pppd, appended to the default of
+# 'nodefaultroute noauth local crtscts'
+# particularly 'updetach' for some Suse users which breaks others
+#pppopts: updetach
+
+# set the network used, first 3 bytes
+#network: 192.168.131
+
+
+[rndis]
+#static_device_ip = "169.254.2.1"
+#static_local_ip = "169.254.2.2"
+#static_netmask = "255.255.255.0"
+#static_broadcast = "169.254.2.255"

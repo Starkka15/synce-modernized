@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -26,16 +26,16 @@ if __name__ == '__main__':
 
     device_path = False
 
-    if os.environ.has_key("ACTION"):
+    if os."ACTION" in environ:
         action = os.environ["ACTION"]
 
-        if os.environ.has_key("DEVPATH"):
+        if os."DEVPATH" in environ:
             device_path = os.environ["DEVPATH"]
         else:
             logger.critical("Udev environment not set: DEVPATH missing")
             sys.exit(1)
 
-        if os.environ.has_key("SUBSYSTEM"):
+        if os."SUBSYSTEM" in environ:
             subsystem = os.environ["SUBSYSTEM"]
         else:
             logger.critical("Udev environment not set: SUBSYSTEM missing")
