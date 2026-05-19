@@ -40,6 +40,8 @@ typedef struct
   gboolean iface_pending;
   GSocketService *server;
   SynceDevice *device;
+  guint trigger_retry_id;
+  gint trigger_retry_count;
 } DeviceEntry;
 
 typedef struct _SynceDeviceManagerPrivate SynceDeviceManagerPrivate;
@@ -66,6 +68,10 @@ struct _SynceDeviceManagerPrivate
 static void
 synce_device_manager_device_entry_free(DeviceEntry *entry)
 {
+  if (entry->trigger_retry_id > 0) {
+    g_source_remove(entry->trigger_retry_id);
+    entry->trigger_retry_id = 0;
+  }
   g_free(entry->device_path);
   g_free(entry->device_ip);
   g_free(entry->local_ip);
@@ -201,6 +207,10 @@ synce_device_manager_client_connected_cb(GSocketService *server,
       /*
        * should close the socket listener on port 5679 here, but can't see how to
        */
+      if (deventry->trigger_retry_id > 0) {
+        g_source_remove(deventry->trigger_retry_id);
+        deventry->trigger_retry_id = 0;
+      }
       g_debug("%s: creating device object for %s", G_STRFUNC, deventry->device_path);
       deventry->device = g_initable_new (SYNCE_TYPE_DEVICE_RNDIS, NULL, &error, "connection", conn, "device-path", deventry->device_path, NULL);
     } else {
@@ -224,6 +234,25 @@ synce_device_manager_client_connected_cb(GSocketService *server,
   return TRUE;
 }
 
+
+static gboolean
+synce_device_manager_trigger_retry_cb(gpointer userdata)
+{
+  DeviceEntry *deventry = (DeviceEntry *)userdata;
+  if (deventry->device) {
+    deventry->trigger_retry_id = 0;
+    return G_SOURCE_REMOVE;
+  }
+  if (deventry->trigger_retry_count >= 10) {
+    g_warning("%s: gave up retrying trigger for %s", G_STRFUNC, deventry->device_ip);
+    deventry->trigger_retry_id = 0;
+    return G_SOURCE_REMOVE;
+  }
+  deventry->trigger_retry_count++;
+  g_debug("%s: retrying trigger (%d/10) for %s", G_STRFUNC, deventry->trigger_retry_count, deventry->device_ip);
+  synce_trigger_connection(deventry->device_ip);
+  return G_SOURCE_CONTINUE;
+}
 
 static gboolean
 synce_device_manager_create_device(SynceDeviceManager *self,
@@ -279,11 +308,13 @@ synce_device_manager_create_device(SynceDeviceManager *self,
   g_debug("%s: listening for device %s", G_STRFUNC, deventry->device_path);
 
   if (deventry->rndis) {
-  g_debug("%s: triggering connection", G_STRFUNC);
+    g_debug("%s: triggering connection", G_STRFUNC);
     synce_trigger_connection(deventry->device_ip);
+    deventry->trigger_retry_count = 0;
+    deventry->trigger_retry_id = g_timeout_add(2000, synce_device_manager_trigger_retry_cb, deventry);
   } else {
-  g_debug("%s: NOT triggering connection", G_STRFUNC);
-}
+    g_debug("%s: NOT triggering connection", G_STRFUNC);
+  }
 
   return TRUE;
 

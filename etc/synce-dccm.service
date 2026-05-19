@@ -1,0 +1,14 @@
+[Unit]
+Description=SynCE Device Connection Manager
+After=dbus.service
+Requires=dbus.service
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/pkill -9 dccm
+ExecStart=/usr/local/libexec/dccm --log-level=6
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

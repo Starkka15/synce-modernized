@@ -2,10 +2,65 @@
 
 import sys
 import os
+import subprocess
+import pwd
+import glob
+import time
 
 sys.path.insert(0,"/usr/local/share/synce-core")
 import synceconnector
 from synceconnector import signal_dccm_connect, signal_dccm_disconnect, process_config, get_logger, rndis_static_config, rndis_dhcp_config, rndis_dhcp_unconfig
+
+DCCM_BIN    = "/usr/local/libexec/dccm"
+MOUNT_BIN   = "/usr/local/bin/synce-fuse"
+DCCM_DBUS   = "org.synce.dccm"
+
+def find_console_user():
+    for uid_dir in glob.glob("/run/user/[0-9]*"):
+        uid = int(os.path.basename(uid_dir))
+        try:
+            return pwd.getpwuid(uid)
+        except Exception:
+            pass
+    return None
+
+def dccm_restart():
+    """Restart dccm via systemctl (safe cgroup), wait for D-Bus registration."""
+    subprocess.run(["systemctl", "restart", "synce-dccm"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # Wait up to 5 seconds for dccm to register on D-Bus
+    import dbus
+    for _ in range(50):
+        time.sleep(0.1)
+        try:
+            bus = dbus.SystemBus()
+            if bus.name_has_owner(DCCM_DBUS):
+                return True
+        except Exception:
+            pass
+    return False
+
+def fuse_unmount(mountpoint):
+    # Try normal unmount first, fall back to lazy unmount for stale mounts
+    r = subprocess.run(["fusermount3", "-u", mountpoint],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if r.returncode != 0:
+        subprocess.run(["fusermount3", "-uz", mountpoint],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def fuse_mount(pw):
+    mountpoint = os.path.join(pw.pw_dir, "Axim")
+    fuse_unmount(mountpoint)          # clear any stale mount first
+    time.sleep(0.3)
+    try:
+        os.mkdir(mountpoint)
+    except OSError:
+        pass  # already exists or stale mount — proceed anyway
+    subprocess.Popen(
+        ["su", "-s", "/bin/sh", pw.pw_name, "-c", f"{MOUNT_BIN} {mountpoint} -s"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+    return mountpoint
 
 #
 # main()
@@ -16,88 +71,64 @@ if __name__ == '__main__':
 
     process_config()
 
-    device_path = False
-    device_ip = False
-    local_ip = False
-
-    if "ACTION" in os.environ:
-        action = os.environ["ACTION"]
-
-        if "INTERFACE" in os.environ:
-            iface = os.environ["INTERFACE"]
-        else:
-            logger.critical("Udev environment not set: INTERFACE missing")
-            sys.exit(1)
-
-        if "DEVPATH" in os.environ:
-            device_path = os.environ["DEVPATH"]
-        else:
-            logger.critical("Udev environment not set: DEVPATH missing")
-            sys.exit(1)
-
-    else:
+    if "ACTION" not in os.environ:
         logger.warning("Environment not set, ACTION is missing")
         sys.exit(1)
 
-    logger.debug("ACTION="+action)
-    logger.debug("INTERFACE="+iface)
-    logger.debug("DEVPATH="+device_path)
+    action      = os.environ["ACTION"]
+    iface       = os.environ.get("INTERFACE")
+    device_path = os.environ.get("DEVPATH")
+
+    if not iface:
+        logger.critical("Udev environment not set: INTERFACE missing")
+        sys.exit(1)
+    if not device_path:
+        logger.critical("Udev environment not set: DEVPATH missing")
+        sys.exit(1)
+
+    logger.debug(f"ACTION={action} INTERFACE={iface}")
 
     if action == "add":
-        logger.debug("running as addon for interface "+iface)
+        logger.debug("running as addon for interface " + iface)
 
+        # Configure IP first so dccm finds a ready interface via gudev enumeration
         device_ip, local_ip = rndis_dhcp_config(iface)
-
-        if device_ip == False or local_ip == False:
-            logger.info("error running dhclient, trying static config")
-
+        if device_ip is False or local_ip is False:
+            logger.info("dhclient failed, trying static config")
             device_ip, local_ip = rndis_static_config(iface)
-            if device_ip == False or local_ip == False:
+            if device_ip is False or local_ip is False:
                 logger.warning("failed to configure interface")
                 sys.exit(1)
 
-        logger.debug("successfully configured interface")
+        logger.debug("interface configured")
 
-        if signal_dccm_connect(device_path,device_ip,local_ip,True) == False:
-            logger.error("aborting ...")
+        # Restart dccm after IP is up — gudev enumeration will find the ready interface
+        logger.info("starting fresh dccm...")
+        if not dccm_restart():
+            logger.warning("dccm did not register on D-Bus in time, proceeding anyway")
+
+        # Signal dccm in case gudev enumeration didn't fire (belt and suspenders)
+        if signal_dccm_connect(device_path, device_ip, local_ip, True) is False:
+            logger.error("signal_dccm_connect failed, aborting")
             sys.exit(1)
 
-        # Auto-mount FUSE filesystem for the connecting user
-        import subprocess, pwd, glob
-        mount_base = "/usr/local/bin/synce-fuse"
-        if os.path.exists(mount_base):
-            # Find the logged-in console user (first entry in /run/user/)
-            for uid_dir in glob.glob("/run/user/[0-9]*"):
-                uid = int(os.path.basename(uid_dir))
+        # Auto-mount FUSE for the logged-in user
+        if os.path.exists(MOUNT_BIN):
+            pw = find_console_user()
+            if pw:
                 try:
-                    pw = pwd.getpwuid(uid)
-                    mountpoint = os.path.join(pw.pw_dir, "Axim")
-                    os.makedirs(mountpoint, exist_ok=True)
-                    subprocess.Popen(
-                        ["su", "-s", "/bin/sh", pw.pw_name, "-c",
-                         f"{mount_base} {mountpoint} -s &"],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                    )
-                    logger.info(f"mounted device at {mountpoint} for {pw.pw_name}")
+                    mp = fuse_mount(pw)
+                    logger.info(f"mounted device at {mp} for {pw.pw_name}")
                 except Exception as e:
                     logger.warning(f"auto-mount failed: {e}")
-                break
 
-    if action == "remove":
-        logger.debug("running for removal of interface "+iface)
+    elif action == "remove":
+        logger.debug("running for removal of interface " + iface)
 
-        # Unmount FUSE filesystem
-        import subprocess, pwd, glob
-        for uid_dir in glob.glob("/run/user/[0-9]*"):
-            uid = int(os.path.basename(uid_dir))
-            try:
-                pw = pwd.getpwuid(uid)
-                mountpoint = os.path.join(pw.pw_dir, "Axim")
-                subprocess.run(["fusermount3", "-u", mountpoint],
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except Exception:
-                pass
-            break
+        # Unmount FUSE
+        pw = find_console_user()
+        if pw:
+            fuse_unmount(os.path.join(pw.pw_dir, "Axim"))
 
         signal_dccm_disconnect(device_path)
         rndis_dhcp_unconfig(iface)

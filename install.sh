@@ -23,7 +23,7 @@ apt-get install -y \
     libfuse3-dev \
     python3 python3-dbus \
     isc-dhcp-client \
-    udev >/dev/null
+    udev systemd >/dev/null
 
 # ── 2. Build synce-core ───────────────────────────────────────────────────────
 echo "[2/8] Building synce-core..."
@@ -99,7 +99,7 @@ else
 fi
 
 # ── 9. Runtime directory (socket + dhclient lease files) ─────────────────────
-echo "[9/9] Creating runtime directories..."
+echo "[9/9] Creating runtime directories and systemd service..."
 mkdir -p "$PREFIX/var/run/synce"
 chmod 777 "$PREFIX/var/run/synce"
 if [ ! -f /etc/tmpfiles.d/synce.conf ]; then
@@ -107,8 +107,15 @@ if [ ! -f /etc/tmpfiles.d/synce.conf ]; then
         > /etc/tmpfiles.d/synce.conf
 fi
 
+# ── 10. dccm systemd service (auto-start + clean restart on disconnect) ──────
+install -m 644 "$SCRIPT_DIR/etc/synce-dccm.service" \
+    /etc/systemd/system/synce-dccm.service
+systemctl daemon-reload
+systemctl enable synce-dccm
+systemctl restart synce-dccm
+
 echo ""
 echo "=== Installation complete ==="
 echo ""
-echo "Connect your Windows Mobile device via USB."
+echo "Connect your Windows Mobile device via USB — it will connect automatically."
 echo "Run 'pstatus' to verify the connection."
