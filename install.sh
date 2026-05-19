@@ -16,10 +16,11 @@ echo "Source: $SCRIPT_DIR"
 echo ""
 
 # ── 1. Build dependencies ─────────────────────────────────────────────────────
-echo "[1/8] Installing build dependencies..."
+echo "[1/9] Installing build dependencies..."
 apt-get install -y \
     build-essential dkms \
     libglib2.0-dev libdbus-glib-1-dev \
+    libfuse3-dev \
     python3 python3-dbus \
     isc-dhcp-client \
     udev >/dev/null
@@ -34,28 +35,35 @@ make -j"$(nproc)"
 make install
 cd "$SCRIPT_DIR"
 
-# ── 3. Install Python 3 scripts ───────────────────────────────────────────────
-echo "[3/8] Installing Python 3 scripts..."
+# ── 3. Build and install synce-fuse ──────────────────────────────────────────
+echo "[3/9] Building synce-fuse..."
+cd "$SCRIPT_DIR/fuse"
+make -j"$(nproc)"
+make install
+cd "$SCRIPT_DIR"
+
+# ── 4. Install Python 3 scripts ───────────────────────────────────────────────
+echo "[4/9] Installing Python 3 scripts..."
 install -m 644 "$SCRIPT_DIR/scripts/synceconnector.py" \
     "$PREFIX/share/synce-core/synceconnector.py"
 install -m 755 "$SCRIPT_DIR/scripts/udev-synce-rndis" \
     /usr/lib/udev/synce-udev-rndis
 
-# ── 4. Install udev rules ─────────────────────────────────────────────────────
-echo "[4/8] Installing udev rules..."
+# ── 5. Install udev rules ─────────────────────────────────────────────────────
+echo "[5/9] Installing udev rules..."
 install -m 644 "$SCRIPT_DIR/scripts/85-synce.rules" \
     /etc/udev/rules.d/85-synce.rules
 udevadm control --reload-rules
 
-# ── 5. Install D-Bus files ────────────────────────────────────────────────────
-echo "[5/8] Installing D-Bus policy and service files..."
+# ── 6. Install D-Bus files ────────────────────────────────────────────────────
+echo "[6/9] Installing D-Bus policy and service files..."
 install -m 644 "$SCRIPT_DIR/etc/org.synce.dccm.conf" \
     /etc/dbus-1/system.d/org.synce.dccm.conf
 install -m 644 "$SCRIPT_DIR/etc/org.synce.dccm.service" \
     /usr/share/dbus-1/system-services/org.synce.dccm.service
 
-# ── 6. DKMS: patched rndis_host (fixes Dell Axim X50/X51 EAGAIN on USB init) ─
-echo "[6/8] Installing rndis-activesync DKMS module..."
+# ── 7. DKMS: patched rndis_host (fixes Dell Axim X50/X51 EAGAIN on USB init) ─
+echo "[7/9] Installing rndis-activesync DKMS module..."
 DKMS_SRC="/usr/src/rndis-activesync-1.0"
 # Remove any previous install/source
 dkms remove -m rndis-activesync -v 1.0 --all 2>/dev/null || true
@@ -72,8 +80,8 @@ dkms install -m rndis-activesync -v 1.0
 modprobe -r rndis_host 2>/dev/null || true
 modprobe    rndis_host
 
-# ── 7. AppArmor fix: allow dhclient to access synce paths ────────────────────
-echo "[7/8] Patching AppArmor dhclient profile..."
+# ── 8. AppArmor fix: allow dhclient to access synce paths ────────────────────
+echo "[8/9] Patching AppArmor dhclient profile..."
 APPARMOR_LOCAL="/etc/apparmor.d/local/sbin.dhclient"
 APPARMOR_MAIN="/etc/apparmor.d/sbin.dhclient"
 if [ -f "$APPARMOR_MAIN" ]; then
@@ -90,8 +98,8 @@ else
     echo "  AppArmor not active, skipping"
 fi
 
-# ── 8. Runtime directory (socket + dhclient lease files) ─────────────────────
-echo "[8/8] Creating runtime directories..."
+# ── 9. Runtime directory (socket + dhclient lease files) ─────────────────────
+echo "[9/9] Creating runtime directories..."
 mkdir -p "$PREFIX/var/run/synce"
 chmod 777 "$PREFIX/var/run/synce"
 if [ ! -f /etc/tmpfiles.d/synce.conf ]; then

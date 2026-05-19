@@ -62,8 +62,43 @@ if __name__ == '__main__':
             logger.error("aborting ...")
             sys.exit(1)
 
+        # Auto-mount FUSE filesystem for the connecting user
+        import subprocess, pwd, glob
+        mount_base = "/usr/local/bin/synce-fuse"
+        if os.path.exists(mount_base):
+            # Find the logged-in console user (first entry in /run/user/)
+            for uid_dir in glob.glob("/run/user/[0-9]*"):
+                uid = int(os.path.basename(uid_dir))
+                try:
+                    pw = pwd.getpwuid(uid)
+                    mountpoint = os.path.join(pw.pw_dir, "Axim")
+                    os.makedirs(mountpoint, exist_ok=True)
+                    subprocess.Popen(
+                        ["su", "-s", "/bin/sh", pw.pw_name, "-c",
+                         f"{mount_base} {mountpoint} -s &"],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
+                    logger.info(f"mounted device at {mountpoint} for {pw.pw_name}")
+                except Exception as e:
+                    logger.warning(f"auto-mount failed: {e}")
+                break
+
     if action == "remove":
         logger.debug("running for removal of interface "+iface)
+
+        # Unmount FUSE filesystem
+        import subprocess, pwd, glob
+        for uid_dir in glob.glob("/run/user/[0-9]*"):
+            uid = int(os.path.basename(uid_dir))
+            try:
+                pw = pwd.getpwuid(uid)
+                mountpoint = os.path.join(pw.pw_dir, "Axim")
+                subprocess.run(["fusermount3", "-u", mountpoint],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
+            break
+
         signal_dccm_disconnect(device_path)
         rndis_dhcp_unconfig(iface)
 
