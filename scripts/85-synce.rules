@@ -8,9 +8,9 @@
 # parent driver=rndis_host, parent usb interface class=239 (0xef), parent usb interface subclass=1, parent usb interface protocol=1
 # matching on removal is tricky, so just look for the env variable
 
-ACTION=="add", SUBSYSTEM=="net", DRIVERS=="rndis_host", ATTRS{bInterfaceClass}=="ef", ATTRS{bInterfaceSubClass}=="01", ATTRS{bInterfaceProtocol}=="01", ENV{synce}="rndis", RUN+="/usr/lib/udev/synce-udev-rndis"
+ACTION=="add", SUBSYSTEM=="net", DRIVERS=="rndis_host", ATTRS{bInterfaceClass}=="ef", ATTRS{bInterfaceSubClass}=="01", ATTRS{bInterfaceProtocol}=="01", TAG+="synce_rndis", ENV{synce}="rndis", RUN+="/usr/lib/udev/synce-udev-rndis"
 
-ACTION=="remove", ENV{synce}=="rndis", RUN+="/usr/lib/udev/synce-udev-rndis"
+ACTION=="remove", TAG=="synce_rndis", RUN+="/usr/lib/udev/synce-udev-rndis"
 
 
 # capabilities = serial, parent driver = ipaq
