@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# $Id: synce-remove-program.in 4004 2011-03-24 16:19:30Z mark_ellis $
+#
+# Script to uninstall a program
+#
+# See http://www.pocketpcdn.com/qa/uninstall.html to know how it works.
+#
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+if [ -z "$1" ]; then
+
+	echo "As parameter to this script, please enter the program name as it appears under
+Settings -> Remove programs on your Windows CE device."
+
+	exit 1
+fi
+
+@bindir@/prun unload.exe "$1"

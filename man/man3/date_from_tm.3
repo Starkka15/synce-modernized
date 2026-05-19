@@ -1,0 +1,51 @@
+.\" Copyright 2007 Mark Ellis (mark_ellis@users.sourceforge.net)
+.\"
+.\" Permission is hereby granted, free of charge, to any person obtaining a copy of
+.\" this software and associated documentation files (the "Software"), to deal in
+.\" the Software without restriction, including without limitation the rights to
+.\" use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+.\" of the Software, and to permit persons to whom the Software is furnished to do
+.\" so, subject to the following conditions:
+.\" 
+.\" The above copyright notice and this permission notice shall be included in all
+.\" copies or substantial portions of the Software.
+.\" 
+.\" THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+.\" IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+.\" FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+.\" AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+.\" LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+.\" OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+.\" SOFTWARE.
+.TH DATE_FROM_TM 3  2007-08-26 "The SynCE Project" "http://www.synce.org/"
+.SH NAME
+date_from_tm \- convert between tm struct and Windows DATE value
+.SH SYNOPSIS
+.nf
+.B #include <synce.h>
+.sp
+.BI "bool date_from_tm(struct tm *" pTm, " DATE *" pDateOut );
+.sp
+.BI "bool date_to_tm(DATE " dateIn, " DWORD " dwFlags, " struct tm *" pTm );
+.fi
+.SH DESCRIPTION
+The
+.BR date_from_tm ()
+function converts a
+.BR tm
+struct into the Windows
+.BR DATE
+field pointed to by
+.BR pDateOut.
+Only years after 1900 are converted. The fields tm.tm_wday, tm.tm_yday and tm.tm_isdst are not used.
+.sp
+.BR date_to_tm ()
+does the reverse. It only fills the fields tm_sec, tm_min, tm_hour, tm_year, tm_day, tm_mon. Dates before January 1st 1900 are not supported.
+.BR dwFlags
+should be 0, DATE_TIMEVALUEONLY to omit the date information or DATE_DATEVALUEONLY to omit time information. Whereas the
+.BR tm.tm_year
+field usually holds the number of years since 1900, this function provides the complete year.
+.SH "RETURN VALUE"
+Both functions return FALSE on encountering an invalid value or year earlier than 1900, or TRUE if successful.
+.SH "SEE ALSO"
+.BR synce (7)

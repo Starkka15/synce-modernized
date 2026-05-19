@@ -1,0 +1,31 @@
+#
+# set up a WM device and run dccm
+#
+
+# attr doesn't seem to work, env does
+
+# RNDIS devices
+# parent driver=rndis_host, parent usb interface class=239 (0xef), parent usb interface subclass=1, parent usb interface protocol=1
+# matching on removal is tricky, so just look for the env variable
+
+ACTION=="add", SUBSYSTEM=="net", DRIVERS=="rndis_host", ATTRS{bInterfaceClass}=="ef", ATTRS{bInterfaceSubClass}=="01", ATTRS{bInterfaceProtocol}=="01", ENV{synce}="rndis", RUN+="@UDEVDIR@/synce-udev-rndis"
+
+ACTION=="remove", ENV{synce}=="rndis", RUN+="@UDEVDIR@/synce-udev-rndis"
+
+
+# capabilities = serial, parent driver = ipaq
+# If the device has more than one port, then we need to only use the last
+# one.
+# From ipaq.c we can see the choice is only ever 1 or 2 points
+# depending on bNumEndpoints being <=3 or >3 respectively.
+# So we use that knowledge to create rules to only use port_number=1
+# for 2 port devices
+SUBSYSTEM!="tty", GOTO="synce_ipaq_end"
+
+DRIVERS=="ipaq",ATTRS{bNumEndpoints}=="",        ENV{synce}="serial"
+DRIVERS=="ipaq",ATTRS{bNumEndpoints}=="0[0123]", ENV{synce}="serial"
+DRIVERS=="ipaq",ATTRS{port_number}=="1",         ENV{synce}="serial"
+
+ENV{synce}=="serial", RUN+="@UDEVDIR@/synce-udev-serial"
+
+LABEL="synce_ipaq_end"

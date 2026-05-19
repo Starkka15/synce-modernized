@@ -1,0 +1,94 @@
+.\" Copyright 2008 Mark Ellis (mark_ellis@users.sourceforge.net)
+.\"
+.\" Permission is hereby granted, free of charge, to any person obtaining a copy of
+.\" this software and associated documentation files (the "Software"), to deal in
+.\" the Software without restriction, including without limitation the rights to
+.\" use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+.\" of the Software, and to permit persons to whom the Software is furnished to do
+.\" so, subject to the following conditions:
+.\" 
+.\" The above copyright notice and this permission notice shall be included in all
+.\" copies or substantial portions of the Software.
+.\" 
+.\" THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+.\" IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+.\" FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+.\" AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+.\" LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+.\" OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+.\" SOFTWARE.
+.TH SYNCE_ERROR 3  2008-02-23 "The SynCE Project" "http://www.synce.org/"
+.SH NAME
+synce_error \- error reporting functions
+.SH SYNOPSIS
+.nf
+.B #include <synce_log.h>
+.sp
+.BI "void _synce_log(int " level, " const char* " file, " int " line, " const *char " format, " ... );"
+.sp
+.BI "void synce_error(const *char " format, " ... );"
+.BI "void synce_warning(const *char " format, " ... );"
+.BI "void synce_info(const *char " format, " ... );"
+.BI "void synce_debug(const *char " format, " ... );"
+.BI "void synce_trace(const *char " format, " ... );"
+.sp
+.BI "void synce_warning_unless(bool condition, const *char " format, " ... );"
+.sp
+.BI "void synce_log_set_level(int " level );
+.sp
+.BI "void synce_log_use_syslog(" void );
+.sp
+.fi
+.SH DESCRIPTION
+The various
+.BR synce_xxx ()
+logging functions are implemented as macros calling the underlying _synce_log function, but are
+presented here as they should be used for clarity. All accept a format string and optional arguments
+in the same way as printf(3).
+.BR synce_debug () 
+and
+.BR synce_trace ()
+are equivalent.
+.sp
+.BR synce_warning_unless ()
+will only take action if 
+.BR cond
+evaluates to a 
+.BR false
+value.
+.sp
+These functions will as standard log to stdout.
+.BR synce_log_use_syslog ()
+will cause the output to be sent to syslog at the appropriate priority.
+.sp
+.BR synce_log_set_level ()
+sets the maximum priority level that will actually be output, whether to stdout or syslog, with the default 
+maximum level being warning.
+.sp
+The following defines are available, their equivalent syslog priorities are also shown.
+.sp
+.RS
+.nf
+SYNCE_LOG_LEVEL_ERROR     LOG_ERR
+SYNCE_LOG_LEVEL_WARNING   LOG_WARNING
+SYNCE_LOG_LEVEL_INFO      LOG_INFO
+SYNCE_LOG_LEVEL_DEBUG     LOG_DEBUG
+SYNCE_LOG_LEVEL_TRACE     LOG_DEBUG
+.fi
+.RE
+.PP
+.sp
+The following are also available for use with 
+.BR synce_log_set_level ()
+.sp
+.RS
+.nf
+SYNCE_LOG_LEVEL_LOWEST
+SYNCE_LOG_LEVEL_HIGHEST
+SYNCE_LOG_LEVEL_DEFAULT
+.fi
+.RE
+.PP
+.sp
+.SH "SEE ALSO"
+.BR synce (7)

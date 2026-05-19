@@ -1,0 +1,60 @@
+.\" Copyright 2007 Mark Ellis (mark_ellis@users.sourceforge.net)
+.\"
+.\" Permission is hereby granted, free of charge, to any person obtaining a copy of
+.\" this software and associated documentation files (the "Software"), to deal in
+.\" the Software without restriction, including without limitation the rights to
+.\" use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+.\" of the Software, and to permit persons to whom the Software is furnished to do
+.\" so, subject to the following conditions:
+.\" 
+.\" The above copyright notice and this permission notice shall be included in all
+.\" copies or substantial portions of the Software.
+.\" 
+.\" THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+.\" IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+.\" FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+.\" AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+.\" LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+.\" OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+.\" SOFTWARE.
+.TH TIME_FIELDS_FROM_FILETIME 3  2007-08-26 "The SynCE Project" "http://www.synce.org/"
+.SH NAME
+time_fields_from_filetime \- convert between FILETIME and TIME_FIELDS
+.SH SYNOPSIS
+.nf
+.B #include <synce.h>
+.sp
+.BI "void time_fields_from_filetime(const FILETIME *" filetime, " TIME_FIELDS *" timeFields );
+.sp
+.BI "bool time_fields_to_filetime(const TIME_FIELDS *" timeFields, " const FILETIME *" filetime );
+.fi
+.SH DESCRIPTION
+The
+.BR time_fields_from_filetime ()
+function converts a FILETIME value into the existing broken down TIME_FIELDS struct pointed to by
+.BR timeFields .
+.BR time_fields_to_filetime ()
+does the reverse.
+.sp
+.RS
+.nf
+typedef struct _TIME_FIELDS {
+    CSHORT Year;          /* Specifies a value from 1601 on. */
+    CSHORT Month;         /* Specifies a value from 1 to 12. */
+    CSHORT Day;           /* Specifies a value from 1 to 31. */
+    CSHORT Hour;          /* Specifies a value from 0 to 23. */
+    CSHORT Minute;        /* Specifies a value from 0 to 59. */
+    CSHORT Second;        /* Specifies a value from 0 to 59. */
+    CSHORT Milliseconds;  /* Specifies a value from 0 to 999. */
+    CSHORT Weekday;       /* Specifies a value from 0 to 6 (Sunday to Saturday). */
+} TIME_FIELDS;
+.fi
+.RE
+.PP
+.SH "RETURN VALUE"
+The
+.BR time_fields_to_filetime ()
+function returns FALSE on encountering an invalid value,
+or TRUE if successful.
+.SH "SEE ALSO"
+.BR synce (7)

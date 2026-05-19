@@ -1,0 +1,41 @@
+.\" $Id: synce-list-programs.1 4001 2011-03-24 12:39:37Z mark_ellis $
+.TH "SYNCE-LIST-PROGRAMS" "1" "November 2002" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+synce-list-programs \- shows a list of all installed programs
+
+.SH SYNOPSIS
+\fBsynce-list-programs\fR [\-d \fILEVEL\fR] [\-p \fIDEVNAME\fR] [\-h]
+
+.SH OPTIONS
+
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIDEVNAME\fR
+Use the device with the given name, instead of the default.
+
+.TP
+\-h
+Display help message.
+
+.SH "DESCRIPTION"
+
+.PP
+\fBsynce-list-programs\fR shows a list of all programs installed on a device connected through SynCE.
+
+.SH "AUTHOR"
+.PP
+David Eriksson <twogood@users.sourceforge.net>.
+.SH "SEE ALSO"
+synce(1) synce-install-cab(1) synce-remove-program(1)
+

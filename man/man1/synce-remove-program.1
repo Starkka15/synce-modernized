@@ -1,0 +1,52 @@
+.\" $Id: synce-remove-program.1 4003 2011-03-24 14:45:32Z mark_ellis $
+.TH "SYNCE-REMOVE-PROGRAM" "1" "November 2002" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+synce-remove-program \- removes a program from your device
+
+.SH SYNOPSIS
+\fBsynce-remove-program\fR [\-d \fILEVEL\fR] [\-p \fIdevice_path\fR] [\-o \fIUNLOAD_OPT\fR] \fINAME\fR ... \fR
+
+.SH "DESCRIPTION"
+
+.PP
+\fBsynce-remove-program\fR removes a program on a device connected through
+SynCE.
+
+.SH "OPTIONS"
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIPATH\fR
+Path to device
+
+.TP
+\-h
+Display help message.
+
+.TP
+\-o \fIUNLOAD_OPT\fR
+Flags to pass to \fIunload.exe\fR on the remote device.  Currently no
+flags are known, but this flag is here in case we find some.
+
+.TP
+\fINAME\fR 
+The name of the program on the device.  Program names are in the form
+"Provider Program".  This is the same way the name will appear under
+Settings -> Remove programs on your device, or in the ouput from
+\fIsynce-list-programs\fR.
+
+.SH "AUTHOR"
+.PP
+David Eriksson <twogood@users.sourceforge.net>.
+.SH "SEE ALSO"
+synce(1) synce-list-programs(1) synce-install-cab(1) prun(1)

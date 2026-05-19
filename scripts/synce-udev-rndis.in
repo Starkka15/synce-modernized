@@ -1,0 +1,7 @@
+#!/bin/sh
+
+logger -p daemon.info -t synce-udev-rndis "INFO : rndis event, ACTION = $ACTION, INTERFACE = $INTERFACE, DEVPATH = $DEVPATH"
+
+@SYNCEDATADIR@/udev-synce-rndis &
+
+exit 0

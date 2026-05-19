@@ -1,0 +1,31 @@
+# Build artifacts
+*.o
+*.lo
+*.la
+*.a
+*.so
+*.so.*
+.libs/
+.deps/
+Makefile
+config.h
+config.log
+config.status
+autom4te.cache/
+stamp-h1
+libtool
+
+# Autotools generated
+aclocal.m4
+config.guess
+config.sub
+configure
+depcomp
+install-sh
+ltmain.sh
+missing
+
+# Editor
+*.swp
+*~
+.vscode/

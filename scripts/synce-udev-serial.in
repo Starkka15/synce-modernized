@@ -1,0 +1,7 @@
+#!/bin/sh
+
+logger -p daemon.info -t synce-udev-serial "INFO : serial event, ACTION = $ACTION, INTERFACE = $INTERFACE, DEVPATH = $DEVPATH, SUBSYSTEM = $SUBSYSTEM, DEVNAME = $DEVNAME"
+
+@SYNCEDATADIR@/udev-synce-serial &
+
+exit 0

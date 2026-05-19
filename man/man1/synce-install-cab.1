@@ -1,0 +1,67 @@
+.\" $Id: synce-install-cab.1 4003 2011-03-24 14:45:32Z mark_ellis $
+.TH "SYNCE-INSTALL-CAB" "1" "November 2002" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+synce-install-cab \- install .cab file
+
+.SH SYNOPSIS
+\fBsynce-install-cab\fR [\-d \fILEVEL\fR] [\-p \fIdevice_path\fR] [\-o \fIWCE_OPT\fR] [\-n] \fIFILENAME\fR ...\fR
+
+.SH "DESCRIPTION"
+
+.PP
+\fBsynce-install-cab\fR installs a .cab file on a device connected through
+SynCE.
+
+.SH "OPTIONS"
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIPATH\fR
+Path to device
+
+.TP
+\-h
+Display help message.
+
+.TP
+\-o \fIWCE_OPT\fR
+Flags to pass to \fIwceload.exe\fR on the remote device.  Useful flags
+include:
+.IP
+/noui - Install silently
+.IP
+/delete 1 - Don't delete CAB file after installation
+.IP
+/nouninstall - Don't create an uninstall file
+.IP
+/askdest - Ask where to install
+.IP
+/noaskdest - Get install information from registry
+
+.TP
+\-n
+Don't run wceload (just copy CAB files)
+
+
+.TP
+\fIFILENAME\fR 
+The .cab file(s) that will be installed.  If no filenames are
+specified, \fIwceload.exe\fR will nontheless be run on the remote
+device; this will install any CAB files already copied, for example
+with the \fI-n\fR flag.
+
+.SH "AUTHOR"
+.PP
+David Eriksson <twogood@users.sourceforge.net>.
+.SH "SEE ALSO"
+synce(1) synce-remove-program(1) synce-list-programs(1) prun(1) pcp(1)

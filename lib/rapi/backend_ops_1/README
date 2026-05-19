@@ -1,0 +1,111 @@
+List of RAPI command codes:
+
+[i] = Implemented (maybe not tested)
+[d] = Not implemented, returns failure with rapi error E_NOTIMPL
+
+
+[i] 00 CeFindFirstFile		
+[i] 01 CeFindNextFile		
+[i] 02 CeFindClose		
+[i] 03 CeGetFileAttributes	
+[i] 04 CeSetFileAttributes	
+[i] 05 CeCreateFile		
+[i] 06 CeReadFile		
+[i] 07 CeWriteFile		
+[i] 08 CeCloseHandle		
+[i] 09 CeFindAllFiles		
+[i] 0a CeFindFirstDatabase	
+[i] 0b CeFindNextDatabase	
+[i] 0c CeOidGetInfo		
+[i] 0d CeCreateDatabase	
+[i] 0e CeOpenDatabase		
+[i] 0f CeDeleteDatabase	
+
+[i] 10 CeReadRecordProps
+[ ] 10 CeReadRecordPropsEx
+[i] 11 CeWriteRecordProps
+[i] 12 CeDeleteRecord		
+[i] 13 CeSeekDatabase		
+[i] 14 CeSetDatabaseInfo	
+[i] 15 CeSetFilePointer	
+[i] 16 CeSetEndOfFile		
+[i] 17 CeCreateDirectory	
+[i] 18 CeRemoveDirectory	
+[i] 19 CeCreateProcess		
+[i] 1a CeMoveFile		
+[i] 1b CeCopyFile		
+[i] 1c CeDeleteFile		
+[i] 1d CeGetFileSize		
+[i] 1e CeRegOpenKeyEx		
+[i] 1f CeRegEnumKeyEx		
+
+[i] 20 CeRegCreateKeyEx	
+[i] 21 CeRegCloseKey		
+[i] 22 CeRegDeleteKey		
+[i] 23 CeRegEnumValue		
+[i] 24 CeRegDeleteValue	
+[i] 25 CeRegQueryInfoKey	
+[i] 26 CeRegQueryValueEx	
+[i] 27 CeRegSetValueEx		
+[i] 28 CeGetSystemMemoryDivision  [undocumented as RAPI function]
+[i] 29 CeGetStoreInformation	
+[ ] 2a CeGetSystemMetrics	
+[ ] 2b CeGetDesktopDeviceCaps	
+[i] 2c CeFindAllDatabases	
+[i] 2d CeRegCopyFile              [undocumented as RAPI function]
+[i] 2e CeRegRestoreFile           [undocumented as RAPI function]
+[i] 2f CeGetSystemInfo		
+
+[i] 30 CeSHCreateShortcut	
+[ ] 31 CeSHGetShortcutTarget	
+[ ] 32 GetPasswordActive
+[ ] 33 SetPasswordActive
+[i] 34 CeCheckPassword		
+[ ] 35 SetPassword              [undocumented as RAPI function]
+[ ] 36 CeEventHasOccured        [undocumented as RAPI function]
+[i] 37 CeSyncTimeToPc           [undocumented]
+[i] 38 CeStartReplication       [undocumented]
+[d] 39 CeGetFileTime
+[d] 3a CeSetFileTime
+[i] 3b CeGetVersionEx		
+[ ] 3c CeGetWindow		
+[ ] 3d CeGetWindowLong		
+[ ] 3e CeGetWindowText		
+[ ] 3f CeGetClassName		
+
+[ ] 40 CeGlobalMemoryStatus	
+[i] 41 CeGetSystemPowerStatusEx	
+[i] 42 CeSetSystemMemoryDivision  [undocumented as RAPI function]
+[ ] 43 CeGetTempPath		
+[i] 44 CeGetSpecialFolderPath	
+[i] 45 CeRapiInvoke
+[ ] 46 CeRestoreDatabase        [undocumented]
+[ ] 47 CeBackupDatabase         [undocumented]
+[ ] 48 CeBackupFile             [undocumented]
+[i] 49 CeKillAllApps            [undocumented]
+[ ] 4a CeFindFirstDatabaseEx	
+[ ] 4b CeFindNextDatabaseEx	
+[ ] 4c CeCreateDatabaseEx	
+[ ] 4d CeSetDatabaseInfoEx	
+[ ] 4e CeOpenDatabaseEx	
+[ ] 4f CeDeleteDatabaseEx	
+
+[ ] 50 [not used]
+[ ] 51 CeMountDBVol		
+[ ] 52 CeUnmountDBVol		
+[ ] 53 CeFlushDBVol		
+[ ] 54 CeEnumDBVolumes		
+[ ] 55 CeOidGetInfoEx		
+[i] 56 CeProcessConfig          [undocumented]
+
+[d] ?? CeSyncStart
+[d] ?? CeSyncResume
+[d] ?? CeSyncPause
+[d] ?? CeGetDiskFreeSpaceEx
+
+
+
+CeEventHasOccured details:
+
+
+

@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+
+import sys
+import os
+
+sys.path.insert(0,"@SYNCEDATADIR@")
+import synceconnector
+from synceconnector import signal_dccm_connect, signal_dccm_disconnect, process_config, get_logger, rndis_static_config, rndis_dhcp_config, rndis_dhcp_unconfig
+
+#
+# main()
+#
+if __name__ == '__main__':
+
+    logger = get_logger("udev-synce-rndis")
+
+    process_config()
+
+    device_path = False
+    device_ip = False
+    local_ip = False
+
+    if os.environ.has_key("ACTION"):
+        action = os.environ["ACTION"]
+
+        if os.environ.has_key("INTERFACE"):
+            iface = os.environ["INTERFACE"]
+        else:
+            logger.critical("Udev environment not set: INTERFACE missing")
+            sys.exit(1)
+
+        if os.environ.has_key("DEVPATH"):
+            device_path = os.environ["DEVPATH"]
+        else:
+            logger.critical("Udev environment not set: DEVPATH missing")
+            sys.exit(1)
+
+    else:
+        logger.warning("Environment not set, ACTION is missing")
+        sys.exit(1)
+
+    logger.debug("ACTION="+action)
+    logger.debug("INTERFACE="+iface)
+    logger.debug("DEVPATH="+device_path)
+
+    if action == "add":
+        logger.debug("running as addon for interface "+iface)
+
+        device_ip, local_ip = rndis_dhcp_config(iface)
+
+        if device_ip == False or local_ip == False:
+            logger.info("error running dhclient, trying static config")
+
+            device_ip, local_ip = rndis_static_config(iface)
+            if device_ip == False or local_ip == False:
+                logger.warning("failed to configure interface")
+                sys.exit(1)
+
+        logger.debug("successfully configured interface")
+
+        if signal_dccm_connect(device_path,device_ip,local_ip,True) == False:
+            logger.error("aborting ...")
+            sys.exit(1)
+
+    if action == "remove":
+        logger.debug("running for removal of interface "+iface)
+        signal_dccm_disconnect(device_path)
+        rndis_dhcp_unconfig(iface)
+
+    sys.exit(0)
+

@@ -1,0 +1,120 @@
+.\" Copyright 2007 Mark Ellis (mark_ellis@users.sourceforge.net)
+.\"
+.\" Permission is hereby granted, free of charge, to any person obtaining a copy of
+.\" this software and associated documentation files (the "Software"), to deal in
+.\" the Software without restriction, including without limitation the rights to
+.\" use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+.\" of the Software, and to permit persons to whom the Software is furnished to do
+.\" so, subject to the following conditions:
+.\" 
+.\" The above copyright notice and this permission notice shall be included in all
+.\" copies or substantial portions of the Software.
+.\" 
+.\" THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+.\" IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+.\" FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+.\" AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+.\" LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+.\" OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+.\" SOFTWARE.
+.TH RAPI_CONNECTION_FROM_NAME 3  2007-08-26 "The SynCE Project" "http://www.synce.org/"
+.SH NAME
+rapi_connection_from_name \- obtain connection for RAPI function calls
+.SH SYNOPSIS
+.nf
+.B #include <rapi.h>
+.sp
+.BI "RapiConnection *rapi_connection_from_name(const char *" device_name );
+.sp
+.BI "RapiConnection *rapi_connection_from_info(SynceInfo *" info );
+.sp
+.BI "void rapi_connection_select(RapiConnection *" connection );
+.sp
+.BI "void rapi_connection_destroy(RapiConnection *" connection );
+.sp
+.BI "HRESULT CeRapiInit();"
+.sp
+.BI "STDAPI CeRapiUninit();"
+.fi
+.SH DESCRIPTION
+The
+.BR rapi_connection_from_info ()
+function returns a pointer to a newly allocated RapiConnection struct, used for remote function calls to a mobile device. The RapiConnection keeps a pointer to the SynceInfo struct but does not copy it, therefore freeing the SynceInfo before the RapiConnection is not recommended.
+.sp
+.BR rapi_connection_from_name ()
+accomplishes the same for the connected device named
+.BR device_name.
+Refer to
+.BR synce_info_new(3)
+for insight on how this name and the connection daemon in use can affect the device contacted.
+.sp
+.BR rapi_connection_select ()
+allows for selection between multiple active connections. NULL can be passed to result in no active connection.
+.sp
+.BR rapi_connection_destroy ()
+frees a RapiConnection. This should not be called before CeRapiUninit().
+.sp
+.BR CeRapiInit ()
+connects the current RapiConnection to it's mobile device. If already initialised, CERAPI_E_ALREADYINITIALIZED is returned.
+.sp
+.BR CeRapiUninit ()
+destroys the connection for the current RapiConnection. The RapiConnection cannot be re-initialised, it must be destroyed.
+.sp
+An example of using multiple devices follows.
+.sp
+.RS
+.nf
+/*
+ * SynCE support for switching between multiple devices
+ *
+ * Example code for two devices follows!
+ *
+ * It shows two different ways to get a RapiConnection object.
+ *
+ */
+
+RapiConnection* a = rapi_connection_from_name("device_a");
+rapi_connection_select(a);
+CeRapiInit()
+
+SynceInfo* info_b = synce_info_new("device_b");
+RapiConnection* b = rapi_connection_from_info(info_b);
+rapi_connection_select(b);
+CeRapiInit()
+
+rapi_connection_select(a);
+ ...some RAPI calls to device A...
+
+rapi_connection_select(b);
+ ...some RAPI calls to device B...
+
+rapi_connection_select(a);
+CeRapiUninit();
+rapi_connection_destroy(a);
+
+rapi_connection_select(b);
+CeRapiUninit();
+rapi_connection_destroy(b);
+synce_info_destroy(info_b);
+
+.fi
+.RE
+.PP
+.SH "RETURN VALUE"
+.BR rapi_connection_from_name ()
+and
+.BR rapi_connection_from_info ()
+return a pointer to a new RapiConnection.
+.sp
+.BR CeRapiInit()
+and
+.BR CeRapiUninit()
+return S_OK on success or an error code on failure.
+.SH "AUTHOR"
+.PP
+This manual page was written by Mark Ellis <mark_ellis@users.sourceforge.net>.
+.SH "SEE ALSO"
+.BR synce (7),
+.BR synce_info_new (3),
+.BR odccm (1),
+.BR vdccm (1)

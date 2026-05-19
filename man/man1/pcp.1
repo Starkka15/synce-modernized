@@ -1,0 +1,105 @@
+.\" $Id: pcp.1 4001 2011-03-24 12:39:37Z mark_ellis $
+.TH "PCP" "1" "November 2002" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+pcp \- copy files
+
+.SH SYNOPSIS
+\fBpcp\fR [\-d \fILEVEL\fR] [\-p \fIDEVNAME\fR] [\-h] [:]\fISOURCE\fR [[:]\fIDESTINATION\fR]
+
+.SH "DESCRIPTION"
+
+.PP
+\fBpcp\fR copies a file on a device connected through SynCE or between a
+device connected through SynCE and host PC.
+
+.PP
+Forward slashes ('/') in remote file names specified on the command line are
+converted to backward slashes ('\\').
+
+.PP
+This tool must be run as the same user as the dccmd daemon.
+
+.SH "OPTIONS"
+.TP
+\-r
+Copy directories recursively.
+
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIDEVNAME\fR
+Use the device with the given name, instead of the default.
+
+.TP
+\-h
+Display help message.
+
+.TP
+[:]\fISOURCE\fR
+
+Full path to the source filename. When the filename is prefixed with a colon
+(':'), it will be treated as a remote filename, otherwise as a local filename.
+
+.TP
+[:]\fIDESTINATION\fR
+
+Full path to the destination filename. When the filename is prefixed with a colon
+(':'), it will be treated as a remote filename, otherwise as a local filename.
+
+.IP
+If this parameter is omitted and the source filename is local, the local file
+will be copied to a file with the same name in the "My Documents" directory on
+the device connected through SynCE.
+
+.IP
+If this parameter is omitted and the source filename is remote, the remote file
+will be copied to a file with the same name in the current directory.
+
+.SH EXAMPLES
+
+.LP
+Copy a file from host computer to remote device:
+.IP
+pcp download/game.cab ":/Temporary Files/game.cab"
+
+.LP
+Copy a file from remote device to host computer:
+.IP
+pcp ":/My Documents/snore.wav" /tmp/snore.wav
+
+.LP
+Copy a file from host computer to remote device into the "My Document" folder - you
+can leave off the last parameter:
+.IP
+pcp "work/mytext.txt"
+
+.LP
+Copy a file from remote device to host computer into the current directory - you
+can leave off the last parameter:
+.IP
+pcp ":/My Documents/snore.wav"
+
+.LP
+Copy a file from one location on the remote device to another:
+.IP
+pcp ":/My Documents/important.pwi" ":/My Documents/important.backup.pwi" 
+
+
+
+
+
+.SH "AUTHOR"
+.PP
+This manual page was written by David Eriksson <twogood@users.sourceforge.net>.
+.SH "SEE ALSO"
+synce(1) pcp(1) pls(1) prm(1) pmkdir(1) prmdir(1)

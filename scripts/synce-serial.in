@@ -1,0 +1,120 @@
+#!/usr/bin/env python
+
+# Some serial devices will not be picked up automatically by synce,
+# eg those on a serial to usb bridge. This tool will initiate connection.
+# It must be run as root.
+
+import sys
+import os
+import re
+import stat
+import time
+import subprocess
+import logging, logging.handlers
+import platform
+import ConfigParser
+import dbus
+import gudev
+
+sys.path.insert(0,"@SYNCEDATADIR@")
+import synceconnector
+from synceconnector import signal_dccm_connect, process_config, get_logger, serial_stop_device, serial_start_device, serial_get_address, serial_get_devnum
+
+def print_usage():
+	print "Usage:"
+	print "------\n"
+	print "synce-serial <action> <device_file>"
+	print "\nwhere:\n"
+	print "<action>      - add or remove, to start or bring down the connection"
+	print "<device_file> - the device file for the connected device, eg. /dev/ttyS1"
+	print "For example:"
+	print "  synce-serial add /dev/ttyS1\n"
+
+
+#
+# main()
+#
+if __name__ == '__main__':
+
+    if os.geteuid() != 0:
+	print "\nError: must be run as root\n"
+	sys.exit(1)
+
+    if len(sys.argv) != 3:
+	print "\nError: invalid argument count\n"
+	print_usage()	
+	sys.exit(1)
+
+    logger = get_logger("synce-serial-start")
+
+    process_config()
+
+    if platform.system() == "FreeBSD":
+        logger.critical("do we support udev/devicekit on FreeBSD ???")
+        sys.exit(1)
+
+    device_path = False
+
+    action = sys.argv[1]
+    if action != "add" and action != "remove":
+        print "\nError: invalid action\n"
+        print_usage()
+        sys.exit(1)
+
+    device_file = sys.argv[2]
+
+    udev_client = gudev.Client("")
+    device = udev_client.query_by_device_file(device_file)
+    if device == None:
+        logger.critical("Failed to find device "+device_file+" in udev")
+        sys.exit(1)        
+
+    if device.has_property("DEVPATH"):
+        device_path = device.get_property("DEVPATH")
+    else:
+        logger.critical("Failed to obtain DEVPATH from udev for "+device_file+", property missing")
+        sys.exit(1)
+
+    if device.has_property("SUBSYSTEM"):
+        subsystem = device.get_property("SUBSYSTEM")
+    else:
+        logger.critical("Failed to obtain SUBSYSTEM from udev for "+device_file+", property missing")
+        sys.exit(1)
+
+    devnum = serial_get_devnum(device_file)
+    if devnum < 0:
+        sys.exit(1)
+
+    # see the "linkname" option in the man page for pppd
+    linkname = "synce-device"+devnum
+
+    if action == "add":
+        logger.debug("running for device "+device_file)
+
+        try:
+            if stat.S_ISCHR(os.stat(device_file).st_mode) == 0:
+                logger.critical("unable to find a character device named "+device_file)
+                sys.exit(1)
+        except Exception,e:
+            logger.critical("Error stat'ing device file %s: %s" % (device_file, e))
+            sys.exit(1)
+
+        local_ip, remote_ip = serial_get_address(devnum)
+
+        if serial_start_device(device_file, local_ip, remote_ip, linkname) == False:
+            logger.critical("failed to establish serial connection, aborting...")
+            sys.exit(1)
+
+        logger.debug("successfully configured interface")
+
+        if signal_dccm_connect(device_path, remote_ip, local_ip, False) == False:
+            logger.error("aborting ...")
+            sys.exit(1)
+
+    if action == "remove":
+        logger.debug("running for removal of device "+device_file)
+        if serial_stop_device(linkname) == False:
+            logger.critical("failed to take down serial connection, aborting...")
+            sys.exit(1)
+
+    sys.exit(0)

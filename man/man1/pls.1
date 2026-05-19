@@ -1,0 +1,77 @@
+.\" $Id: pls.1 4001 2011-03-24 12:39:37Z mark_ellis $
+.TH "PLS" "1" "November 2002" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+pls \- list directory contents
+
+.SH SYNOPSIS
+\fBpls\fR [\-a] [\-R] [\-d \fILEVEL\fR] [\-p \fIDEVNAME\fR] [\-h] [\fIDIRECTORY\fR]
+
+.SH "DESCRIPTION"
+.PP
+\fBpls\fR list the contents of a directory on a device connected through SynCE.
+
+.PP
+Forward slashes ('/') on the command line are converted to backward slashes ('\\').
+
+.TP
+File attributes
+.IP
+A  Archive
+.IP
+C  Compressed
+.IP
+D  Directory
+.IP
+H  Hidden
+.IP
+I  In ROM
+.IP
+M  ROM module (can only be executed, not read!)
+.IP
+N  Normal
+.IP
+R  Read-only
+.IP
+S  System
+.IP
+T  Temporary
+
+.SH "OPTIONS"
+
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIDEVNAME\fR
+Use the device with the given name, instead of the default.
+
+.TP
+\-a
+Show all files including those marked as hidden.
+
+.TP
+\-R
+Recursively list subdirectories.
+
+.TP
+\-h
+Display help message.
+
+.TP
+\fIDIRECTORY\fR
+The full path name to the directory. Wild cards are allowed, but only for the trailing part of the path, and should be protected from the shell. If this parameter is relative, it is assumed to be relative to the "My Documents" folder. Similarly, if this parameter is omitted, the contents of the "My Documents" folder is listed.
+
+.SH "AUTHOR"
+.PP
+This manual page was written by David Eriksson <twogood@users.sourceforge.net>.
+.SH "SEE ALSO"
+synce(1) pcp(1) pls(1) prm(1) pmkdir(1) prmdir(1)

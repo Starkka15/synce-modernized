@@ -1,0 +1,100 @@
+.\" Copyright 2007 Mark Ellis (mark_ellis@users.sourceforge.net)
+.\"
+.\" Permission is hereby granted, free of charge, to any person obtaining a copy of
+.\" this software and associated documentation files (the "Software"), to deal in
+.\" the Software without restriction, including without limitation the rights to
+.\" use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+.\" of the Software, and to permit persons to whom the Software is furnished to do
+.\" so, subject to the following conditions:
+.\" 
+.\" The above copyright notice and this permission notice shall be included in all
+.\" copies or substantial portions of the Software.
+.\" 
+.\" THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+.\" IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+.\" FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+.\" AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+.\" LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+.\" OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+.\" SOFTWARE.
+.TH WSTR_TO_ASCII 3  2007-08-26 "The SynCE Project" "http://www.synce.org/"
+.SH NAME
+wstr_to_ascii \- wide string handling functions
+.SH SYNOPSIS
+.nf
+.B #include <synce.h>
+.sp
+.BI "char *wstr_to_ascii(LPCWSTR " unicode );
+.BI "char *wstr_to_utf8(LPCWSTR " unicode );
+.BI "char *wstr_to_current(LPCWSTR " unicode );
+.sp
+.BI "LPWSTR wstr_from_ascii(const char * " ascii );
+.BI "LPWSTR wstr_from_utf8(const char * " utf8 );
+.BI "LPWSTR wstr_from_current(const char * " utf8 );
+.sp
+.BI "void wstr_free_string(void * " string );
+.sp
+.BI "size_t wstrlen(LPCWSTR " unicode );
+.sp
+.BI "LPWSTR wstrcpy(LPWSTR " dest, " LPCWSTR " src );
+.sp
+.BI "bool wstr_append(LPWSTR " dest, " LPCWSTR " src, " size_t " max_dest_length );
+.sp
+.BI "bool wstr_equal(LPWSTR " a, " LPWSTR " b );
+.sp
+.BI "LPWSTR wstrdup(LPCWSTR " string );
+.sp
+.fi
+.SH DESCRIPTION
+The
+.BR wstr_to_xxx ()
+functions convert a wide char string to the appropriate local string. The 
+.BR wstr_from_xxx ()
+functions do the reverse. Use
+.BR wstr_free_string ()
+to free memory allocated for wide strings.
+.sp
+.BR wstrcpy ()
+requires that
+.BR dest
+is large enough to contain
+.BR src.
+No bounds checking is performed.
+.sp
+.BR wstr_append ()
+requires that
+.BR dest
+is at least
+.BR max_dest_length
+long. No bounds checking is performed.
+.sp
+The remaining functions perform standard string operations on wide char strings.
+.sp
+.SH "RETURN VALUE"
+.BR wstr_to_xxx ()
+and
+.BR wstr_from_xxx ()
+return pointers to the allocated strings, or NULL on failure, which will occur
+if a source character cannot be represented in the destination encoding.
+.sp
+.BR wstrdup ()
+return a pointer to the allocated string, or NULL on failure.
+.BR wstrlen ()
+returns the string length.
+.BR wstrcpy ()
+returns the pointer to
+.BR src.
+.sp
+.BR wstr_append()
+returns false on failure eg. if the sum of the lengths is greater than
+.BR max_dest_length,
+true on success.
+.sp
+.BR wstr_equal()
+returns true if
+.BR a
+and
+.BR b
+are equal, false otherwise.
+.SH "SEE ALSO"
+.BR synce (7)

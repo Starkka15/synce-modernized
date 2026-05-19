@@ -1,0 +1,52 @@
+.\" $Id: rapiconfig.1 4001 2011-03-24 12:39:37Z mark_ellis $
+.TH "RAPICONFIG" "1" "August 2003" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+rapiconfig \- upload an XML config file to a SynCE connected device
+
+.SH SYNOPSIS
+\fBrapiconfig\fR [\-d \fILEVEL\fR] [\-P DEVNAME] [\-h] [\-p] [\-m] \fIFILENAME\fR
+
+.SH "DESCRIPTION"
+
+.PP
+\fBrapiconfig\fR uploads an XML config file to a device connected via SynCE.
+
+.SH "OPTIONS"
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIDEVNAME\fR
+Use the device with the given name, instead of the default.
+
+
+.TP
+\-h
+Display help message.
+
+.TP
+\-p
+Process the document.
+
+.TP
+\-m
+Return metadata.
+
+.TP
+\fIFILENAME\fR
+Name of the XML configuration document.
+
+.SH "AUTHOR"
+.PP
+David Eriksson <twogood@users.sourceforge.net>.
+.SH "SEE ALSO"
+synce(1)

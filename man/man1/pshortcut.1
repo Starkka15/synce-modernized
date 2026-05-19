@@ -1,0 +1,58 @@
+.\" $Id $
+.TH "PSHORTCUT" "1" "March 2006" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+pshortcut \- create a shortcut
+
+.SH SYNOPSIS
+\fBpshortcut\fR [\-d \fILEVEL\fR] [\-p \fIDEVNAME\fR] [\-h] \fISHORTCUT\fR \fITARGET\fR
+
+.SH "DESCRIPTION"
+
+.PP
+\fBpshortcut\fR creates a shortcut to a file on a device connected
+through SynCE.
+
+.PP
+Forward slashes ('/') in remote file names specified on the command line are
+converted to backward slashes ('\\').
+
+.PP
+This tool must be run as the same user as the dccmd daemon.
+
+.SH "OPTIONS"
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIDEVNAME\fR
+Use the device with the given name, instead of the default.
+
+.TP
+\-h
+Display help message.
+
+.TP
+\fISHORTCUT\fR
+
+Full path to the new shortcut that should be created.
+
+.TP
+\fITARGET\fR
+
+Full path to the shortcut's target; that is, the file the shortcut
+should point to.
+
+.SH "AUTHOR"
+.PP
+This manual page was written by Scott Gifford <gifford@umich.edu>.
+.SH "SEE ALSO"
+synce(1) pcp(1) pls(1) prm(1) pmkdir(1) prmdir(1)

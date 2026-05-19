@@ -1,0 +1,46 @@
+.\" $Id: pmkdir.1 4001 2011-03-24 12:39:37Z mark_ellis $
+.TH "PMKDIR" "1" "November 2002" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+pmkdir \- make directory
+
+.SH SYNOPSIS
+\fBpmkdir\fR [\-d \fILEVEL\fR] [\-p \fIDEVNAME\fR] [\-h] \fIDIRECTORY\fR
+
+.SH "DESCRIPTION"
+
+.PP
+\fBpmkdir\fR creates a directory on a device connected through SynCE.
+
+.PP
+Forward slashes ('/') on the command line are converted to backward slashes ('\\').
+
+.SH "OPTIONS"
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIDEVNAME\fR
+Use the device with the given name, instead of the default.
+
+.TP
+\-h
+Display help message.
+
+.TP
+\fIFILE\fR
+Full path name to the directory that should be created.
+
+.SH "AUTHOR"
+.PP
+This manual page was written by David Eriksson <twogood@users.sourceforge.net>.
+.SH "SEE ALSO"
+synce(1) pcp(1) pls(1) pmv(1) prm(1) prmdir(1)

@@ -1,0 +1,223 @@
+/* $Id: synce.h.in 4136 2012-11-22 15:10:51Z mark_ellis $ */
+#ifndef __synce_h__
+#define __synce_h__
+
+/*
+ * Include some files
+ */
+#include <sys/types.h>
+#include <time.h>
+#include <@INT_HEADER@>
+
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+
+#ifndef NULL
+#include <stdlib.h>
+#endif
+
+
+/*
+ * Get data types for compatibility with Microsoft Windows
+ */
+#include "synce_types.h"
+
+
+/*
+ * Functions provided by libsynce
+ */
+
+#ifdef __cplusplus
+extern "C"
+{
+namespace synce
+{
+#endif
+
+/*
+ * TIME_FIELDS, FILETIME and DATE conversion
+ */
+
+void time_fields_from_filetime(const FILETIME* filetime, TIME_FIELDS* timeFields);
+bool time_fields_to_filetime(const TIME_FIELDS* timeFields, FILETIME* filetime);
+
+void filetime_from_unix_time(time_t unix_time, FILETIME *filetime);
+time_t filetime_to_unix_time(const FILETIME *filetime); /* deprecated! use time_fields_from_filetime() */
+
+#define DATE_TIMEVALUEONLY   1
+#define DATE_DATEVALUEONLY   2
+
+bool date_from_tm(struct tm* pTm, DATE *pDateOut);
+bool date_to_tm(DATE dateIn, DWORD dwFlags, struct tm* pTm);
+
+
+/*
+ * Wide string handling
+ */
+
+char* wstr_to_ascii(LPCWSTR unicode);
+
+char* wstr_to_utf8(LPCWSTR unicode);
+
+char* wstr_to_current(LPCWSTR unicode);
+
+LPWSTR wstr_from_ascii(const char* ascii);
+
+LPWSTR wstr_from_utf8(const char* utf8);
+
+LPWSTR wstr_from_current(const char* utf8);
+
+void wstr_free_string(void* str);
+
+size_t wstrlen(LPCWSTR unicode);
+
+LPWSTR wstrcpy(LPWSTR dest, LPCWSTR src);
+
+bool wstr_append(LPWSTR dest, LPCWSTR src, size_t max_dest_length);
+
+bool wstr_equal(LPWSTR a, LPWSTR b);
+
+LPWSTR wstrdup(LPCWSTR string);
+
+/*
+ * Old function names
+ */
+
+#define wstr_strlen(a)    wstrlen(a)
+#define wstr_strcpy(a,b)  wstrcpy(a,b)
+
+
+/*
+ * Endian conversions
+ */
+
+#if !defined(htole32) || !defined(htole16) || !defined(letoh16) || !defined(letoh32) || !defined(htobe32) || !defined(htobe16) || !defined(betoh16) || !defined(betoh32)
+#undef htole16
+#undef htole32
+#undef letoh16
+#undef letoh32
+#undef htobe16
+#undef htobe32
+#undef betoh16
+#undef betoh32
+
+#define SYNCE_HOST_BIGENDIAN @WORDS_BIGENDIAN@
+#define HAVE_BYTESWAP_HEADER @HAVE_BYTESWAP_HEADER@
+
+/* byte swapping functions */
+
+#if HAVE_BYTESWAP_HEADER
+#include <@BYTESWAP_HEADER@>
+#else
+uint16_t bswap_16(uint16_t x);
+uint32_t bswap_32(uint32_t x);
+#endif /* HAVE_BYTESWAP_HEADER */
+
+
+/* define host-to-little-endian and little-endian-to-host macros */
+
+#if SYNCE_HOST_BIGENDIAN
+
+#define htole16(x)    bswap_16(x)
+#define htole32(x)    bswap_32(x)
+#define letoh16(x)    bswap_16(x)
+#define letoh32(x)    bswap_32(x)
+
+#define htobe16(x)    (x)
+#define htobe32(x)    (x)
+#define betoh16(x)    (x)
+#define betoh32(x)    (x)
+
+#else /* HOST_LITTLE_ENDIAN */
+
+#define htole16(x)    (x)
+#define htole32(x)    (x)
+#define letoh16(x)    (x)
+#define letoh32(x)    (x)
+
+#define htobe16(x)    bswap_16(x)
+#define htobe32(x)    bswap_32(x)
+#define betoh16(x)    bswap_16(x)
+#define betoh32(x)    bswap_32(x)
+
+#endif /* SYNCE_HOST_BIGENDIAN */
+
+#endif
+
+
+/*
+ * Encode a password with a key
+ */
+
+bool synce_password_encode(
+		const char *asciiPassword,
+		unsigned char key,
+		unsigned char **encodedPassword,
+		size_t *encodedPasswordSize);
+
+
+/*
+ * Configuration directory and file name stuff
+ */
+
+bool synce_get_directory(char** path);
+bool synce_get_subdirectory(const char* name, char** directory);
+bool synce_get_connection_filename(char** filename);
+bool synce_set_connection_filename(const char* filename);
+bool synce_set_default_connection_filename();
+bool synce_get_script_directory(char** directory);
+
+/*
+ * Error handling
+ */
+
+const char* synce_strerror(DWORD error);
+const char* synce_strerror_from_hresult(HRESULT hr);
+
+
+/*
+ * Info from the ~/.synce/active_connection file
+ * written by (v)dccm, or obtained over dbus from odccm or dccm
+ */
+
+typedef struct _SynceInfo SynceInfo;
+
+typedef enum _SynceInfoIdField
+{
+        INFO_NAME,
+        INFO_OBJECT_PATH
+} SynceInfoIdField;
+
+SynceInfo* synce_info_new(const char* device_name);
+SynceInfo* synce_info_new_by_field(SynceInfoIdField field, const char* data);
+void synce_info_destroy(SynceInfo* info);
+
+const char *synce_info_get_name(SynceInfo *info);
+const char *synce_info_get_guid(SynceInfo *info);
+bool synce_info_get_os_version(SynceInfo *info, unsigned int *os_major, unsigned int *os_minor);
+unsigned int synce_info_get_build_number(SynceInfo *info);
+unsigned int synce_info_get_processor_type(SynceInfo *info);
+const char *synce_info_get_os_name(SynceInfo *info);
+const char *synce_info_get_model(SynceInfo *info);
+
+const char *synce_info_get_device_ip(SynceInfo *info);
+const char *synce_info_get_local_ip(SynceInfo *info);
+
+unsigned int synce_info_get_partner_id_1(SynceInfo *info);
+unsigned int synce_info_get_partner_id_2(SynceInfo *info);
+
+const char *synce_info_get_object_path(SynceInfo *info);
+pid_t synce_info_get_dccm_pid(SynceInfo *info);
+const char *synce_info_get_transport(SynceInfo *info);
+const char *synce_info_get_password(SynceInfo *info);
+int synce_info_get_key(SynceInfo *info);
+
+#ifdef __cplusplus
+}
+}
+#endif
+
+
+#endif
+

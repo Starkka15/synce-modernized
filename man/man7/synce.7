@@ -1,0 +1,60 @@
+.\" $Id: synce.7 4078 2012-08-03 11:24:36Z mark_ellis $
+.TH "SynCE" "7" "November 2002" "The SynCE project" "http://www.synce.org/"
+.SH NAME
+SynCE \- A project for connecting to devices running Microsoft Windows Mobile.
+
+.SH "DESCRIPTION"
+
+The SynCE project aims to provide libraries and tools to connect to and synchronise with PDA's and other devices running Microsoft Windows Mobile, or Windows CE.
+
+The main components include :-
+
+.SS
+libsynce
+.PP
+Core library that provides various support services and functions.
+
+.SS
+librapi2
+.PP
+Core library implementing the RAPI protocol, equivalent to rapi.dll on a Windows OS. RAPI is used for most kinds of interaction with a WM device.
+
+This library actually implements two versions of the protocol. RAPI 1 is used for devices up to and including CE 5.0, with RAPI 2 coming into use from 5.1 (WM5).
+
+.SS
+librra
+.PP
+Library implementing RRA (Remote Replication Agent), a protocol used for synchronisation. This protocol is used for all data synchronisation until WM5, at which point Airsync is used for the majority. RRA is still used for file synchronisation however.
+
+.SS
+dccm
+.PP
+The dccm daemon negotiates the initial connection with a WM device, and may provide keep-alive signals and client connections, depending on the device version and flavour of dccm.
+
+There have been a number of dccm 'flavours'. The original, also known as synce-dccm, is now considered obsolete and should not be used. Vdccm is a natural progression of dccm which is not greatly used anymore. Odccm is the most common in use at the moment, and uses dbus to provide connections to both legacy and modern devices. Hal-dccm is now obsolete, it integrated the dccm functionality into hal to provide a more platform consistent interface. Dccm is now incorporated into the core package with libraries and tools, and uses udev and dbus.
+
+
+The following steps are required to get started with SynCE:
+
+.SS 
+(1) Ensure the rndis kernel module or a serial connection mechanism is installed
+.PP
+To use advanced network features (rndis) with a WM5 or later device, which is recommended, you must use the usb-rndis-[lite|ng] driver from SynCE. For older devices or to use serial with WM5, if core dccm is not used you will require the synce-serial package. You will of course also need a dccm daemon, core dccm or odccm is recommended.
+
+.SS
+(2) Start the connection daemon (as root)
+.PP
+If using odccm, this daemon must run as the root user. With core dccm, dccm will be started as required. Older dccm implementations must be run as your user.
+
+.SS
+(3) Run tools that access the device (as user)
+.PP
+See for example pls(1) and pcp(1).
+
+.PP
+See http://www.synce.org/ for more information about the SynCE project.
+.SH "AUTHOR"
+.PP
+This manual page was written by David Eriksson <twogood@users.sourceforge.net>. It was later updated by Jonny Lamb <jonnylamb@jonnylamb.com> and Mark Ellis <mark@mpellis.org.uk>.
+.SH "SEE ALSO"
+odccm(1)

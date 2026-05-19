@@ -1,0 +1,43 @@
+.\" $Id $
+.TH "PSETTIME" "1" "March 2006" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+psettime \- synchronize the time on a PDA with the local computer
+
+.SH SYNOPSIS
+\fBpsettime\fR [\-d \fILEVEL\fR] [\-p \fIDEVNAME\fR] [\-h]
+
+.SH "DESCRIPTION"
+
+.PP
+\fBpsettime\fR sets the time on a device connected through
+SynCE to the time on the local computer.
+
+.PP
+This tool must be run as the same user as the dccmd daemon.
+
+.SH "OPTIONS"
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIDEVNAME\fR
+Use the device with the given name, instead of the default.
+
+.TP
+\-h
+Display help message.
+
+.SH "AUTHOR"
+.PP
+This manual page was written by Scott Gifford <gifford@umich.edu>.
+.SH "SEE ALSO"
+synce(1) pcp(1) pls(1) prm(1) pmkdir(1) prmdir(1)

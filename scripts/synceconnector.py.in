@@ -1,0 +1,477 @@
+
+import os
+import stat
+import platform
+import re
+import subprocess
+import logging, logging.handlers
+import ConfigParser
+import dbus
+
+DBUS_DBUS_BUSNAME       = "org.freedesktop.DBus"
+DBUS_DBUS_IFACE         = "org.freedesktop.DBus"
+DBUS_DBUS_OBJPATH       = "/org/freedesktop/DBus"
+
+DBUS_SYNCE_BUSNAME         = "org.synce.dccm"
+DBUS_SYNCE_MANAGER_IFACE   = "org.synce.dccm.DeviceManager.Control"
+DBUS_SYNCE_MANAGER_OBJPATH = "/org/synce/dccm/DeviceManagerControl"
+
+# defaults
+config_file = '@SYSCONFDIR@/synce-connector.conf'
+log_level = logging.DEBUG
+logger = None
+
+# rndis network defaults
+DEFAULT_RNDIS_DEVICE_IP = "169.254.2.1"
+DEFAULT_RNDIS_LOCAL_IP = "169.254.2.2"
+DEFAULT_RNDIS_NETMASK = "255.255.255.0"
+DEFAULT_RNDIS_BROADCAST = "169.254.2.255"
+
+# serial defaults
+DEFAULT_SERIAL_NETWORK = "192.168.131"
+pppopts = ["nodefaultroute", "noauth", "local", "crtscts"]
+
+# ppp setup
+#
+PPPD = "@PPPDPATH@"
+VAR_PPP = "/var/run"
+DEVSPEED = '115200'
+
+
+#
+# set up logging to syslog
+#
+def get_logger(log_name):
+    global logger
+
+    log_facility = logging.handlers.SysLogHandler.LOG_DAEMON
+
+    logging.basicConfig(level=logging.WARNING,
+                        format='%(asctime)s %(name)s %(levelname)s : %(message)s')
+
+    logger = logging.getLogger(log_name)
+
+    sys_log = logging.handlers.SysLogHandler("/dev/log", log_facility)
+    syslog_form = logging.Formatter('%(name)s[%(process)d] %(levelname)s : %(message)s')
+    sys_log.setFormatter(syslog_form)
+    logger.addHandler(sys_log)
+
+    return logger
+
+
+#
+# fall back to static config
+#
+def rndis_static_config(iface):
+
+    logger.debug("attempting static ip configuration")
+    cmd_list = ["@IFCONFIGPATH@",iface,DEFAULT_RNDIS_LOCAL_IP,"netmask",DEFAULT_RNDIS_NETMASK,"broadcast",DEFAULT_RNDIS_BROADCAST]
+
+    # returns a Popen object
+    try:
+        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        output_text = proc.communicate()[0]
+    except Exception,e:
+        logger.error("failure running ifconfig: %s" % e)
+        return False, False
+
+    rc = proc.returncode
+
+    if rc != 0:
+        logger.error("ifconfig failed with return code %d",rc)
+        return False, False
+
+    logger.debug("ifconfig succeeded")
+
+    device_ip = DEFAULT_RNDIS_DEVICE_IP
+    local_ip = DEFAULT_RNDIS_LOCAL_IP
+
+    return device_ip, local_ip
+
+
+#
+# try to contact device's dhcp server
+#
+def rndis_dhcp_config(iface):
+
+    logger.debug("attempting dynamic ip configuration")
+
+    pidfile = "@LOCALSTATEDIR@/run/dhclient-synce-"+iface+".pid"
+    leasefile = "@LOCALSTATEDIR@/run/dhclient-synce-"+iface+".lease"
+    configfile = "@SYNCEDATADIR@/dhclient.conf"
+
+    cmd_list = ["@DHCLIENTPATH@","-pf",pidfile,"-lf",leasefile,"-cf",configfile,iface]
+
+    device_ip = False
+    local_ip = False
+
+    # returns a Popen object
+    try:
+        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        output_text = proc.communicate()[0]
+    except Exception,e:
+        logger.error("failure running dhclient: %s" % e)
+        return False, False
+
+    rc = proc.returncode
+
+    if rc != 0:
+        logger.error("dhclient failed with return code %d",rc)
+        return False, False
+
+    output_list = output_text.split('\n')
+
+    dhcp_ack_re = re.compile('DHCPACK .*from (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+    dhcp_bound_re = re.compile('bound to (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+
+    for line in output_list:
+        logger.debug("dhclient output: "+line)
+
+        match_obj = dhcp_ack_re.match(line)
+        if match_obj != None:
+            device_ip = match_obj.group(1)
+            logger.debug("dhclient returned device address "+device_ip)
+
+        match_obj = dhcp_bound_re.match(line)
+        if match_obj != None:
+            local_ip = match_obj.group(1)
+            logger.debug("dhclient returned local address "+local_ip)
+
+    return device_ip, local_ip
+
+
+#
+# if we're using dhcp, release it
+#
+def rndis_dhcp_unconfig(iface):
+
+    logger.debug("attempting to release dhcp lease")
+
+    pidfile = "@LOCALSTATEDIR@/run/dhclient-synce-"+iface+".pid"
+    leasefile = "@LOCALSTATEDIR@/run/dhclient-synce-"+iface+".lease"
+    configfile = "@SYNCEDATADIR@/dhclient.conf"
+
+    if os.path.isfile(pidfile) != True:
+        logger.debug("no pid file %s, not releasing", pidfile)
+        return False
+
+    cmd_list = ["@DHCLIENTPATH@","-r","-pf",pidfile,"-lf",leasefile,"-cf",configfile,iface]
+
+    # returns a Popen object
+    try:
+        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        output_text = proc.communicate()[0]
+    except Exception,e:
+        logger.error("failure running dhclient: %s" % e)
+        return True
+
+    rc = proc.returncode
+
+    if rc != 0:
+        logger.info("dhclient failed with return code %d",rc)
+        return True
+
+    logger.debug("released dhcp lease")
+    return True
+
+
+# calculate "device number" from the device file
+#
+def serial_get_devnum(device_file):
+
+    devnum_re = re.compile('^[^0-9]*([0-9]*)$')
+    devnum_match = devnum_re.match(device_file)
+    if devnum_match != None:
+        devnum = devnum_match.group(1)
+    else:
+        devnum = 0
+
+    # Add 120 for /dev/ttyS*, to support both standard serial
+    # and USB
+    serial_re = re.compile('ttyS')
+    serial_match = serial_re.match(device_file)
+    if serial_match != None:
+        devnum = int(devnum) + 120
+
+    return devnum
+
+# get standard IP addresses
+#
+def serial_get_address(device_num):
+    local_ip = DEFAULT_SERIAL_NETWORK+"."+str(int(device_num) + 1)
+    remote_ip = DEFAULT_SERIAL_NETWORK+"."+str(int(device_num) + 129)
+    return local_ip, remote_ip
+
+
+# stop pppd
+#
+def serial_stop_device(linkname):
+
+    pidfile = VAR_PPP+"/ppp-"+linkname+".pid"
+
+    if os.path.isfile(pidfile) != True:
+        logger.warning("unable find a running SynCE connection for %s", linkname)
+        return False
+
+    while os.path.isfile(pidfile):
+        try:
+            f = open(pidfile, 'r')
+            textpid = f.readline().rstrip()
+            f.close()
+        except Exception, e:
+            logger.warning("unable to read PID from %s: %s", pidfile, e)
+            return False
+
+        try:
+            pid = int(textpid)
+        except Exception, e:
+            logger.error("found invalid PID in %s: %s", pidfile, e)
+            return False
+
+        logger.info("killing process with PID %d", pid)
+
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except Exception,e:
+            logger.error("unable stop the SynCE connection with PID %d: %s", pid, e)
+            return False
+
+        logger.info("requested shutdown of %s", linkname)
+
+        time.sleep(3)
+
+    return True
+
+# start pppd
+#
+def serial_start_device(device_file, local_ip, remote_ip, linkname):
+
+    ipaddr = local_ip+":"+remote_ip
+
+    cmd_list = [PPPD, device_file, DEVSPEED, "connect", "@LIBEXECDIR@/synce-serial-chat", ipaddr, "ms-dns", local_ip]
+    for item in pppopts:
+        cmd_list.append(item)
+
+    if platform.system() != "FreeBSD":
+        cmd_list.append("linkname")
+        cmd_list.append(linkname)
+
+    logger.debug("calling pppd as:")
+    logger.debug(cmd_list)
+
+    # Now bring up the connection
+
+    # returns a Popen object
+    try:
+        proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        output_text = proc.communicate()[0]
+    except Exception,e:
+        logger.error("failure running pppd: %s" % e)
+        return False
+
+    rc = proc.returncode
+
+    if rc != 0:
+        logger.error("failed to initialize ppp connection, return code %d",rc)
+        return False
+
+    return True
+
+
+#
+# run dccm after the interface is configured
+#
+def run_dccm(device_path, device_ip, local_ip, rndis):
+
+    logger.debug("starting dccm ...")
+
+    dccm_log_level = "1"
+
+    if log_level <= logging.DEBUG:
+        dccm_log_level = "6"
+    elif log_level <= logging.INFO:
+        dccm_log_level = "4"
+    elif log_level <= logging.WARNING:
+        dccm_log_level = "3"
+
+    cmd_list = ["@LIBEXECDIR@/dccm", "--device-path="+device_path, "--device-ip="+device_ip, "--local-ip="+local_ip, "--log-level="+dccm_log_level]
+    if rndis == True:
+        cmd_list.append("--rndis")
+
+    logger.debug("calling dccm as:")
+    logger.debug(cmd_list)
+
+    try:
+        os.execv("@LIBEXECDIR@/dccm", cmd_list)
+    except Exception,e:
+        logger.error("failed to exec dccm !!: %s" % e)
+
+    return
+
+
+#
+# signal dccm after the interface is configured
+#
+def signal_dccm_connect(device_path, device_ip, local_ip, rndis):
+
+    logger.debug("signalling dccm for connection ...")
+
+    dccm_log_level = "1"
+
+    if log_level <= logging.DEBUG:
+        dccm_log_level = "6"
+    elif log_level <= logging.INFO:
+        dccm_log_level = "4"
+    elif log_level <= logging.WARNING:
+        dccm_log_level = "3"
+
+    try:
+        dccm_manager = dbus.Interface(dbus.SystemBus().get_object(DBUS_SYNCE_BUSNAME, DBUS_SYNCE_MANAGER_OBJPATH), DBUS_SYNCE_MANAGER_IFACE)
+    except Exception,e:
+        logger.critical("failed to connect to dccm device manager %s: %s" % (device_path, e))
+        return False
+
+    logger.debug("signalling dccm with:")
+    if rndis == True:
+        rndis_text = "True"
+    else:
+        rndis_text = "False"
+        
+    logger.debug("device-path=%s, device-ip=%s, local-ip=%s, rndis=%s" % (device_path, device_ip, local_ip, rndis_text))
+
+    try:
+        dccm_manager.DeviceConnected(device_path, device_ip, local_ip, rndis)
+    except Exception, e:
+        logger.critical("failed to signal device connect to dccm device manager %s: %s" % (DBUS_SYNCE_MANAGER_OBJPATH, e))
+        return False
+
+    return True
+
+
+#
+# signal dccm when device is disconnected
+#
+def signal_dccm_disconnect(device_path):
+
+    logger.debug("signalling dccm for disconnection ...")
+
+    dccm_log_level = "1"
+
+    if log_level <= logging.DEBUG:
+        dccm_log_level = "6"
+    elif log_level <= logging.INFO:
+        dccm_log_level = "4"
+    elif log_level <= logging.WARNING:
+        dccm_log_level = "3"
+
+    try:
+        dccm_manager = dbus.Interface(dbus.SystemBus().get_object(DBUS_SYNCE_BUSNAME, DBUS_SYNCE_MANAGER_OBJPATH), DBUS_SYNCE_MANAGER_IFACE)
+    except Exception,e:
+        logger.critical("failed to connect to dccm device manager %s: %s" % (device_path, e))
+        return False
+
+    logger.debug("signalling dccm with:")
+    logger.debug("device-path=%s" % (device_path))
+
+    try:
+        dccm_manager.DeviceDisconnected(device_path)
+    except Exception, e:
+        logger.critical("failed to signal device disconnect to dccm device manager %s: %s" % (DBUS_SYNCE_MANAGER_OBJPATH, e))
+        return False
+
+    return True
+
+
+def process_config():
+
+    global log_level
+    global DEFAULT_RNDIS_DEVICE_IP
+    global DEFAULT_RNDIS_LOCAL_IP
+    global DEFAULT_RNDIS_NETMASK
+    global DEFAULT_RNDIS_BROADCAST
+    global DEFAULT_SERIAL_NETWORK
+    global pppopts
+
+    config = ConfigParser.ConfigParser()
+    try:
+        config.read(config_file)
+    except Exception,e:
+        logger.warning("failed to parse config file %s: %s" % (config_file, e))
+        return False
+
+    if config.has_option('general', 'loglevel'):
+        loglevel_txt = config.get('general', 'loglevel').lower()
+        if loglevel_txt == 'critical':
+            log_level = logging.CRITICAL
+        elif loglevel_txt == 'error':
+            log_level = logging.ERROR
+        elif loglevel_txt == 'warning':
+            log_level = logging.WARNING
+        elif loglevel_txt == 'info':
+            log_level = logging.INFO
+        elif loglevel_txt == 'debug':
+            log_level = logging.DEBUG
+        else:
+            logger.warning("found invalid loglevel in config file %s: %s" % (config_file, loglevel_txt))
+
+        logger.setLevel(log_level)
+
+    if config.has_option('rndis', 'static_device_ip'):
+        new_ip = config.get('rndis', 'static_device_ip')
+        
+        ip_re = re.compile('^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
+        ip_match = ip_re.match(new_ip)
+        if ip_match != None:
+            DEFAULT_RNDIS_DEVICE_IP = new_ip
+        else:
+            logger.warning("found invalid device_ip in config file %s: %s" % (config_file, new_ip))
+
+    if config.has_option('rndis', 'static_local_ip'):
+        new_ip = config.get('rndis', 'static_local_ip')
+        
+        ip_re = re.compile('^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
+        ip_match = ip_re.match(new_ip)
+        if ip_match != None:
+            DEFAULT_RNDIS_LOCAL_IP = new_ip
+        else:
+            logger.warning("found invalid local_ip in config file %s: %s" % (config_file, new_ip))
+
+    if config.has_option('rndis', 'static_netmask'):
+        new_ip = config.get('rndis', 'static_netmask')
+        
+        ip_re = re.compile('^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
+        ip_match = ip_re.match(new_ip)
+        if ip_match != None:
+            DEFAULT_RNDIS_NETMASK = new_ip
+        else:
+            logger.warning("found invalid netmask in config file %s: %s" % (config_file, new_ip))
+
+    if config.has_option('rndis', 'static_broadcast'):
+        new_ip = config.get('rndis', 'static_broadcast')
+        
+        ip_re = re.compile('^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$)')
+        ip_match = ip_re.match(new_ip)
+        if ip_match != None:
+            DEFAULT_RNDIS_BROADCAST = new_ip
+        else:
+            logger.warning("found invalid broadcast in config file %s: %s" % (config_file, new_ip))
+
+    if config.has_option('serial', 'pppopts'):
+        extra_opts = config.get('serial', 'pppopts').split()
+        for item in extra_opts:
+            pppopts.append(item)
+
+    if config.has_option('serial', 'network'):
+        new_network = config.get('serial', 'network')
+        
+        network_re = re.compile('^(\d{1,3}\.\d{1,3}\.\d{1,3}$)')
+        network_match = network_re.match(new_network)
+        if network_match != None:
+            DEFAULT_SERIAL_NETWORK = new_network
+        else:
+            logger.warning("found invalid network in config file %s: %s" % (config_file, new_network))
+
+    return True
+
+
+

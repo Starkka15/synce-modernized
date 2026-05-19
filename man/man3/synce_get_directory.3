@@ -1,0 +1,59 @@
+.\" Copyright 2007 Mark Ellis (mark_ellis@users.sourceforge.net)
+.\"
+.\" Permission is hereby granted, free of charge, to any person obtaining a copy of
+.\" this software and associated documentation files (the "Software"), to deal in
+.\" the Software without restriction, including without limitation the rights to
+.\" use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+.\" of the Software, and to permit persons to whom the Software is furnished to do
+.\" so, subject to the following conditions:
+.\" 
+.\" The above copyright notice and this permission notice shall be included in all
+.\" copies or substantial portions of the Software.
+.\" 
+.\" THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+.\" IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+.\" FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+.\" AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+.\" LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+.\" OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+.\" SOFTWARE.
+.TH SYNCE_GET_DIRECTORY 3  2007-08-26 "The SynCE Project" "http://www.synce.org/"
+.SH NAME
+synce_get_directory \- get synce configuration directory
+.SH SYNOPSIS
+.nf
+.B #include <synce.h>
+.sp
+.BI "bool synce_get_directory(char ** " path );
+.sp
+.BI "bool synce_get_subdirectory(const char * " name, " char ** " path );
+.sp
+.BI "bool synce_get_script_directory(char ** " path );
+.fi
+.SH DESCRIPTION
+The
+.BR synce_get_directory ()
+function provides a string describing the location of the synce configuration directory. If the environment variable
+.BR SYNCE_CONF_DIR
+is set, it's value is returned. The default location is ~/.synce.
+.sp
+The
+.BR synce_get_subdirectory ()
+function provides a string describing the location of the subdirectory
+.BR name
+in the synce configuration directory.
+.BR name
+cannot contain '/'.
+.sp
+The
+.BR synce_get_script_directory ()
+function provides a string describing the location of the script subdirectory
+in the synce configuration directory.
+.SH "RETURN VALUE"
+Returns true if successful. Fails and returns false if
+.BR path
+is an invalid pointer,
+.BR SYNCE_CONF_DIR
+is not set and user cannot be determined, or the directory does not exist.
+.SH "SEE ALSO"
+.BR synce (7)

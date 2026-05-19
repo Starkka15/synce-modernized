@@ -1,0 +1,42 @@
+.\" $Id: pstatus.1 4001 2011-03-24 12:39:37Z mark_ellis $
+.TH "PSTATUS" "1" "November 2002" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+pstatus \- show device status
+
+.SH SYNOPSIS
+\fBpstatus\fR [\-d \fILEVEL\fR] [\-p \fIDEVNAME\fR] [\-h]\fR
+
+.SH "DESCRIPTION"
+
+.PP
+\fBpstatus\fR displays information about a device connected through SynCE.
+
+.SH "OPTIONS"
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIDEVNAME\fR
+Use the device with the given name, instead of the default.
+
+.TP
+\-h
+Display help message.
+
+
+
+
+.SH "AUTHOR"
+.PP
+David Eriksson <twogood@users.sourceforge.net>.
+.SH "SEE ALSO"
+synce(1) prun(1)

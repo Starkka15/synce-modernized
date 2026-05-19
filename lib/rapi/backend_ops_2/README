@@ -1,0 +1,101 @@
+List of RAPI command codes:
+
+[i] = Implemented (maybe not tested)
+[d] = Not implemented, returns failure with rapi error E_NOTIMPL
+
+
+[ ] 00 CeEventHasOccured
+[i] 01 CeSyncTimeToPc
+[i] 02 CeStartReplication
+[d] 03 RegCopyFile
+[d] 04 RegRestoreFile
+[ ] 05 GetPasswordActive
+[ ] 06 SetPasswordActive
+[ ] 07 SetPassword
+[d] 08 GetSystemMemoryDivision
+[d] 09 SetSystemMemoryDivision
+[ ] 0a CeBackupDatabase
+[ ] 0b CeRestoreDatabase
+[ ] 0c CeBackupFile
+[d] 0d CeKillAllApps
+[i] 0e CeProcessConfig
+[i] 0f CeSyncPause
+[i] 10 CeSyncResume
+[i] 11 CeFindFirstFile
+[i] 12 CeFindNextFile
+[i] 13 CeFindClose
+[i] 14 CeGetFileAttributes
+[d] 15 CeSetFileAttributes
+[i] 16 CeCreateFile
+[i] 17 CeReadFile
+[i] 18 CeWriteFile
+[i] 19 CeCloseHandle
+[i] 1a CeFindAllFiles
+[d] 1b CeFindFirstDatabase
+[d] 1c CeFindNextDatabase
+[d] 1d CeOidGetInfo
+[d] 1e CeCreateDatabase
+[d] 1f CeOpenDatabase
+[d] 20 CeDeleteDatabase
+[d] 21 CeReadRecordProps
+[d] 22 CeWriteRecordProps
+[d] 23 CeDeleteRecord
+[d] 24 CeSeekDatabase
+[d] 25 CeSetDatabaseInfo
+[i] 26 CeSetFilePointer
+[i] 27 CeSetEndOfFile
+[i] 28 CeCreateDirectory
+[i] 29 CeRemoveDirectory
+[i] 2a CeCreateProcess
+[i] 2b CeMoveFile
+[i] 2c CeCopyFile
+[i] 2d CeDeleteFile
+[i] 2e CeGetFileSize
+[i] 2f CeRegOpenKeyEx
+[i] 30 CeRegEnumKeyEx
+[i] 31 CeRegCreateKeyEx
+[i] 32 CeRegCloseKey
+[i] 33 CeRegDeleteKey
+[i] 34 CeRegEnumValue
+[i] 35 CeRegDeleteValue
+[i] 36 CeRegQueryInfoKey
+[i] 37 CeRegQueryValueEx
+[i] 38 CeRegSetValueEx
+[i] 39 CeGetStoreInformation
+[ ] 3a CeGetSystemMetrics
+[ ] 3b CeGetDesktopDeviceCaps
+[d] 3c CeFindAllDatabases
+[i] 3d CeGetSystemInfo
+[d] 3e CeSHCreateShortcut
+[ ] 3f CeSHGetShortcutTarget
+[d] 40 CeCheckPassword
+[i] 41 CeGetFileTime
+[i] 42 CeSetFileTime
+[i] 43 CeGetVersionEx
+[ ] 44 CeGetWindow
+[ ] 45 CeGetWindowLong
+[ ] 46 CeGetWindowText
+[ ] 47 CeGetClassName
+[ ] 48 CeGetGlobalMemoryStatus
+[i] 49 CeGetSystemPowerStatusEx
+[ ] 4a CeGetTempPath
+[i] 4b CeGetSpecialFolderPath
+[ ] 4c CeSetDatabaseInfoEx
+[ ] 4d CeFindFirstDatabaseEx
+[ ] 4e CeFindNextDatabaseEx
+[ ] 4f CeCreateDatabaseEx
+[ ] 50 CeSetDatabaseInfoEx
+[ ] 51 CeOpenDatabaseInfoEx
+[ ] 52 CeDeleteDatabaseEx
+[ ] 53 CeReadRecordPropsEx
+[ ] 54 CeMountDBVol
+[ ] 55 CeUnmountDBVol
+[ ] 56 CeFlushDBVol
+[ ] 57 CeEnumDBVolumes
+[ ] 58 CeOidGetInfoEx
+[i] 59 CeSyncStart
+[ ] 5a CeSyncStop
+[ ] 5b CeQueryInstructionSet
+[i] 5c CeGetDiskFreespaceEx
+
+[d] ?? CeRapiInvoke

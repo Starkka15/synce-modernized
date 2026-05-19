@@ -1,0 +1,115 @@
+.\" $Id $
+.TH "SYNCE-REGISTRY" "1" "March 2006" "The SynCE project" "http://synce.sourceforge.net/"
+.SH NAME
+synce-registry \- read or modify the registry on a PDA
+
+.SH SYNOPSIS
+\fBsynce-registry\fR [\-d \fILEVEL\fR] [\-p \fIDEVNAME\fR] [\-h]
+   [\-r] \fIPARENTKEY\fR \fIKEY\fR \fIVALUE\fR
+     \-w [\-t TYPE] \fIPARENTKEY\fR \fIKEY\fR \fIVALUE\fR \fINEWVALUE\fR
+     \-l \fIPARENTKEY\fR \fIKEY\fR
+     \-n \fIPARENTKEY\fR \fINEWKEY\fR
+     \-x \fIPARENTKEY\fR \fIKEY\fR \fIVALUE\fR (\fBnot supported\fR)
+     \-X \fIPARENTKEY\fR \fIKEY\fR (\fBnot supported\fR)
+
+.SH "DESCRIPTION"
+
+.PP
+\fBsynce-registry\fR manipulates the registry on a device connected
+through SynCE.  It can read and write values, add new keys and values,
+and list the values of a key.
+
+.PP
+Forward slashes ('/') in key names specified on the command line are
+converted to backward slashes ('\\').
+
+.PP
+This tool must be run as the same user as the dccmd daemon.
+
+.SH "OPTIONS"
+.TP
+\-d \fILEVEL\fR
+Set debug log level:
+.IP
+0 - No logging (default)
+.IP
+1 - Errors only
+.IP
+2 - Errors and warnings
+.IP
+3 - Everything
+
+.TP
+\-p \fIDEVNAME\fR
+Use the device with the given name, instead of the default.
+
+.TP
+\-h
+Display help message.
+
+.TP
+[\-r] \fIPARENTKEY\fR \fIKEY\fR \fIVALUE\fR
+
+Read a value.  This is the default.
+
+.TP
+\-w [\-t TYPE] \fIPARENTKEY\fR \fIKEY\fR \fIVALUE\fR \fINEWVALUE\fR
+
+Write a value.  If \fITYPE\fR is supplied, that type of value will be
+written; otherwise a string.  The following options are valid for
+\fITYPE\fR:
+
+.IP
+\fIsz\fR - String
+.IP
+\fIdword\fR - Double-word (4 bytes)
+.IP
+\fIdword_bige\fR - Double word (4 bytes), big-endian
+.IP
+\fIexpand_sz\fR - String with path expansion
+.IP
+\fImulti_sz\fR - Multiple strings (\fBnot supported\fR)
+.IP
+\fIbinary\fR - Binary data (\fBnot supported\fR)
+
+.TP
+\-l \fIPARENTKEY\fR \fIKEY\fR
+List the names of values and subkeys in the given \fIKEY\fR.
+
+.TP
+\-n \fIPARENTKEY\fR \fIKEY\fR
+Create a new key.
+
+.TP
+\-x \fIPARENTKEY\fR \fIKEY\fR \fIVALUE\fR
+Delete the given \fIVALUE\fR from the given \fIKEY\fR.  (\fBnot implemented\fR)
+
+.TP
+\-X \fIPARENTKEY\fR \fIKEY\fR
+Delete the given \fIKEY\fR. (\fBnot implemented\fR)
+
+.TP
+\fIPARENTKEY\fR
+
+The top-level key (sometimes called the \fIhive\fR).  The only valid
+options are \fIHKEY_CLASSES_ROOT\fR (abbreviated \fIHKCR\fR),
+\fIHKEY_CURRENT_USER\fR (\fIHKCU\fR), \fIHKEY_LOCAL_MACHINE\fR
+(\fIHKLM\fR), and \fIHKEY_USERS\fR (\fIHKU\fR).
+
+.TP
+\fIKEY\fR
+The key to operate on.  A key can contain zero or more values and subkeys.
+
+.TP
+\fIVALUE\fR
+The value to operate on.
+
+.TP
+\fINEWVALUE\fR
+The new value to set \fIVALUE\fR to in a write operation.
+
+.SH "AUTHOR"
+.PP
+David Eriksson <twogood@users.sourceforge.net>, Scott Gifford <gifford@umich.edu>.
+.SH "SEE ALSO"
+synce(1) pstatus(1)

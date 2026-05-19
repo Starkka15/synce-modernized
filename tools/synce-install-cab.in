@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# $Id: synce-install-cab.in 4004 2011-03-24 16:19:30Z mark_ellis $
+#
+# Script to install a .cab file
+#
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+if [ ! -f "$1" ]; then
+	echo "Enter .cab file as parameter"
+	exit 1
+fi
+
+#
+# First, make sure that these directories exist
+#
+set +e
+@bindir@/pmkdir /Windows/AppMgr 2>/dev/null
+@bindir@/pmkdir /Windows/AppMgr/Install 2>/dev/null
+
+set -e
+
+# copy the file to a special directory
+echo "Copying file '$1' to device..."
+@bindir@/pcp "$1" ":/Windows/AppMgr/Install/synce-install.cab"
+
+# run program that installs cab file in /Windows/AppMgr/Install
+echo "Installing '$1'..."
+@bindir@/prun wceload.exe
+
