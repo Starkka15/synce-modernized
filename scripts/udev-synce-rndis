@@ -56,10 +56,11 @@ def fuse_mount(pw):
         os.mkdir(mountpoint)
     except OSError:
         pass  # already exists or stale mount — proceed anyway
-    # Delay mount by 6s: device connects to dccm ~3s after trigger,
-    # RAPI init needs the connection to be established first.
+    # Use systemd-run to escape the udev cgroup (udev kills child processes
+    # on script exit). Delay 6s: RAPI session takes ~3s to establish.
     subprocess.Popen(
-        ["su", "-s", "/bin/sh", pw.pw_name, "-c",
+        ["systemd-run", "--no-block",
+         "su", "-s", "/bin/sh", pw.pw_name, "-c",
          f"sleep 6 && {MOUNT_BIN} {mountpoint} -s"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
@@ -127,6 +128,12 @@ if __name__ == '__main__':
 
     elif action == "remove":
         logger.debug("running for removal of interface " + iface)
+
+        # Kill synce-fuse first (it blocks in fuse_main; SIGTERM is enough
+        # since any in-flight RAPI call returns immediately once device is gone)
+        subprocess.run(["pkill", "-TERM", "-f", "synce-fuse.*Axim"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(0.5)
 
         # Unmount FUSE
         pw = find_console_user()

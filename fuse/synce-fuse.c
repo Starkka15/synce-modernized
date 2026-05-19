@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <signal.h>
 #include <pthread.h>
 #include <time.h>
 
@@ -224,21 +225,31 @@ static int sf_open(const char *path, struct fuse_file_info *fi)
     return 0;
 }
 
+/* RAPI protocol buffer limit — safe max per CeReadFile/CeWriteFile call */
+#define RAPI_CHUNK 1024
+
 static int sf_read(const char *path, char *buf, size_t size, off_t offset,
                    struct fuse_file_info *fi)
 {
     (void)path;
     HANDLE h = (HANDLE)(uintptr_t)fi->fh;
-    DWORD nread = 0;
+    size_t total = 0;
 
     pthread_mutex_lock(&g_lock);
-    /* Seek to offset */
-    IRAPISession_CeSetFilePointer(g_session, h, (LONG)offset, NULL, FILE_BEGIN);
-    BOOL ok = IRAPISession_CeReadFile(g_session, h, buf, (DWORD)size, &nread, NULL);
+    if (IRAPISession_CeSetFilePointer(g_session, h, (LONG)offset, NULL, FILE_BEGIN) == (DWORD)-1) {
+        pthread_mutex_unlock(&g_lock);
+        return -EIO;
+    }
+    while (total < size) {
+        DWORD chunk = (DWORD)((size - total) < RAPI_CHUNK ? (size - total) : RAPI_CHUNK);
+        DWORD nread = 0;
+        BOOL ok = IRAPISession_CeReadFile(g_session, h, buf + total, chunk, &nread, NULL);
+        if (!ok) { pthread_mutex_unlock(&g_lock); return -EIO; }
+        if (nread == 0) break; /* EOF */
+        total += nread;
+    }
     pthread_mutex_unlock(&g_lock);
-
-    if (!ok) return -EIO;
-    return (int)nread;
+    return (int)total;
 }
 
 static int sf_write(const char *path, const char *buf, size_t size, off_t offset,
@@ -246,15 +257,22 @@ static int sf_write(const char *path, const char *buf, size_t size, off_t offset
 {
     (void)path;
     HANDLE h = (HANDLE)(uintptr_t)fi->fh;
-    DWORD nwritten = 0;
+    size_t total = 0;
 
     pthread_mutex_lock(&g_lock);
-    IRAPISession_CeSetFilePointer(g_session, h, (LONG)offset, NULL, FILE_BEGIN);
-    BOOL ok = IRAPISession_CeWriteFile(g_session, h, buf, (DWORD)size, &nwritten, NULL);
+    if (IRAPISession_CeSetFilePointer(g_session, h, (LONG)offset, NULL, FILE_BEGIN) == (DWORD)-1) {
+        pthread_mutex_unlock(&g_lock);
+        return -EIO;
+    }
+    while (total < size) {
+        DWORD chunk = (DWORD)((size - total) < RAPI_CHUNK ? (size - total) : RAPI_CHUNK);
+        DWORD nwritten = 0;
+        BOOL ok = IRAPISession_CeWriteFile(g_session, h, buf + total, chunk, &nwritten, NULL);
+        if (!ok) { pthread_mutex_unlock(&g_lock); return -EIO; }
+        total += nwritten;
+    }
     pthread_mutex_unlock(&g_lock);
-
-    if (!ok) return -EIO;
-    return (int)nwritten;
+    return (int)total;
 }
 
 static int sf_release(const char *path, struct fuse_file_info *fi)
@@ -470,6 +488,26 @@ static void rapi_disconnect(void)
     if (g_desktop) { IRAPIDesktop_Release(g_desktop);  g_desktop = NULL; }
 }
 
+/* ── RAPI watchdog ────────────────────────────────────────────────────────── */
+
+static void *rapi_watchdog(void *arg)
+{
+    (void)arg;
+    while (1) {
+        sleep(3);
+        STORE_INFORMATION si;
+        pthread_mutex_lock(&g_lock);
+        BOOL ok = g_session &&
+                  IRAPISession_CeGetStoreInformation(g_session, &si);
+        pthread_mutex_unlock(&g_lock);
+        if (!ok) {
+            kill(getpid(), SIGTERM); /* triggers fuse_main exit */
+            break;
+        }
+    }
+    return NULL;
+}
+
 /* ── main ─────────────────────────────────────────────────────────────────── */
 
 static void show_usage(const char *name)
@@ -516,7 +554,16 @@ int main(int argc, char *argv[])
     if (rapi_connect() != 0)
         return 1;
 
-    /* Run single-threaded: RAPI is not re-entrant, mutex protects us anyway */
+    /* Watchdog thread: probe RAPI every 3s; SIGTERM self when device gone.
+     * Must run in foreground (-f) so the thread survives past fuse_main's
+     * internal daemonize fork. systemd-run keeps the process alive. */
+    pthread_t wdog;
+    pthread_create(&wdog, NULL, rapi_watchdog, NULL);
+    pthread_detach(wdog);
+
+    /* Force foreground so the watchdog thread isn't killed by fork() */
+    fuse_opt_add_arg(&args, "-f");
+    /* Single-threaded: RAPI is not re-entrant, mutex protects us */
     fuse_opt_add_arg(&args, "-s");
 
     int ret = fuse_main(args.argc, args.argv, &sf_ops, NULL);
