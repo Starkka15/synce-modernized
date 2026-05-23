@@ -10,6 +10,7 @@ Based on synce-core 0.17 (2013). Updated to build clean on modern Linux (Ubuntu 
 - **dccm** — connection manager daemon (handles USB device detection via udev)
 - **CLI tools** — `pls`, `pcp`, `prm`, `pmkdir`, `pmv`, `prun`, `pstatus`, `pcat`, `pbackup` and more
 - **synce-fuse** — FUSE filesystem: mount your device as `~/Axim` (or any directory)
+- **synce-gui** — system tray GUI showing connection status (connected/disconnected icons)
 
 ## Changes from upstream
 
@@ -85,6 +86,21 @@ pbackup ./device-backup/ -p "/My Documents"       # backup a specific path only
 
 ```bash
 pbackup ~/axim-backups/$(date +%Y-%m-%d)/
+```
+
+## System tray GUI
+
+`synce-gui.py` provides a minimal system tray icon that reflects device connection state. Requires `python3-gi` and `python3-gi-cairo`:
+
+```bash
+sudo apt install python3-gi python3-gi-cairo gir1.2-appindicator3-0.1
+python3 synce-gui.py &
+```
+
+Install the `.desktop` file to launch it automatically on login:
+
+```bash
+cp synce-gui.desktop ~/.config/autostart/
 ```
 
 ## License
