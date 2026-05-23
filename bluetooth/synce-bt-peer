@@ -1,0 +1,7 @@
+nodefaultroute
+noauth
+local
+192.168.132.102:192.168.132.201
+ms-dns 192.168.131.102
+linkname synce-bt
+ipparam synce-bt

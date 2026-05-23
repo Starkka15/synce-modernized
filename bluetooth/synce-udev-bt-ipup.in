@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+import sys
+import subprocess
+import platform
+
+sys.path.insert(0,"@SYNCEDATADIR@")
+import synceconnector
+from synceconnector import process_config, get_logger
+
+
+if __name__ == '__main__':
+
+    logger = get_logger("synce-udev-bt-ipup")
+
+    iface = sys.argv[1]
+    devfile = sys.argv[2]
+    speed = sys.argv[3]
+    local_ip = sys.argv[4]
+    device_ip = sys.argv[5]
+    ipparam = sys.argv[6]
+
+    if ipparam != "synce-bt":
+        sys.exit(0)
+
+    process_config()
+
+    if platform.system() == "FreeBSD":
+        logger.critical("do we support udev/devicekit on FreeBSD ???")
+        sys.exit(1)
+
+    # find the udev path for the network interface
+    device_path = False
+
+    udev_client = gudev.Client("")
+    device = udev_client.query_by_subsystem_and_name("net", iface)
+    if device == None:
+        logger.critical("Failed to find network interface "+iface+" in udev")
+        sys.exit(1)
+
+    if device.has_property("DEVPATH"):
+        device_path = device.get_property("DEVPATH")
+    else:
+        logger.critical("Failed to obtain DEVPATH from udev for "+iface+", property missing")
+        sys.exit(1)
+
+    if device.has_property("SUBSYSTEM"):
+        subsystem = device.get_property("SUBSYSTEM")
+    else:
+        logger.critical("Failed to obtain SUBSYSTEM from udev for "+iface+", property missing")
+        sys.exit(1)
+
+    if signal_dccm(device_path, device_ip, local_ip, False) == False:
+        logger.error("aborting ...")
+        sys.exit(1)
+
+    sys.exit(0)

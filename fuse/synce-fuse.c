@@ -22,9 +22,22 @@
 #include <signal.h>
 #include <pthread.h>
 #include <time.h>
+#include <sys/statvfs.h>
 
 #include <synce.h>
 #include <rapi2.h>
+#include <synce_log.h>
+
+/* Log an operation to stderr with timestamp */
+static void sf_log(const char *op, const char *path)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    struct tm tm;
+    localtime_r(&ts.tv_sec, &tm);
+    fprintf(stderr, "[synce-fuse %02d:%02d:%02d] %s %s\n",
+            tm.tm_hour, tm.tm_min, tm.tm_sec, op, path);
+}
 
 /* ── Globals ──────────────────────────────────────────────────────────────── */
 
@@ -189,6 +202,48 @@ static int sf_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     return 0;
 }
 
+static int sf_statfs(const char *path, struct statvfs *stbuf)
+{
+    memset(stbuf, 0, sizeof(*stbuf));
+    stbuf->f_bsize   = 4096;
+    stbuf->f_frsize  = 4096;
+    stbuf->f_namemax = 255;
+
+    /* CeGetDiskFreeSpaceEx takes UTF-8 path with backslashes */
+    char *cepath = strdup(path);
+    if (!cepath) return -ENOMEM;
+    for (char *p = cepath; *p; p++) if (*p == '/') *p = '\\';
+
+    ULARGE_INTEGER free_avail = 0, total = 0, total_free = 0;
+    pthread_mutex_lock(&g_lock);
+    DWORD ok = g_session &&
+               IRAPISession_CeGetDiskFreeSpaceEx(g_session, cepath,
+                                                  &free_avail, &total,
+                                                  &total_free);
+    pthread_mutex_unlock(&g_lock);
+    free(cepath);
+
+    if (ok) {
+        stbuf->f_blocks = (total      + 4095) / 4096;
+        stbuf->f_bfree  = (total_free + 4095) / 4096;
+        stbuf->f_bavail = (free_avail + 4095) / 4096;
+        return 0;
+    }
+
+    /* Fallback: CeGetDiskFreeSpaceEx not supported (RAPI1 / old device) */
+    STORE_INFORMATION si;
+    pthread_mutex_lock(&g_lock);
+    BOOL ok2 = g_session && IRAPISession_CeGetStoreInformation(g_session, &si);
+    pthread_mutex_unlock(&g_lock);
+
+    if (!ok2) return -EIO;
+
+    stbuf->f_blocks = (si.dwStoreSize + 4095) / 4096;
+    stbuf->f_bfree  = (si.dwFreeSize  + 4095) / 4096;
+    stbuf->f_bavail = stbuf->f_bfree;
+    return 0;
+}
+
 /* Open: store the CE file handle in fi->fh */
 static int sf_open(const char *path, struct fuse_file_info *fi)
 {
@@ -222,11 +277,12 @@ static int sf_open(const char *path, struct fuse_file_info *fi)
 
     if (h == INVALID_HANDLE_VALUE) return -ENOENT;
     fi->fh = (uint64_t)(uintptr_t)h;
+    sf_log((fi->flags & O_ACCMODE) == O_RDONLY ? "open-r" : "open-w", path);
     return 0;
 }
 
-/* RAPI protocol buffer limit — safe max per CeReadFile/CeWriteFile call */
-#define RAPI_CHUNK 1024
+/* RAPI protocol buffer limit — 4KB matches original SynCE pcp default */
+#define RAPI_CHUNK 4096
 
 static int sf_read(const char *path, char *buf, size_t size, off_t offset,
                    struct fuse_file_info *fi)
@@ -277,11 +333,11 @@ static int sf_write(const char *path, const char *buf, size_t size, off_t offset
 
 static int sf_release(const char *path, struct fuse_file_info *fi)
 {
-    (void)path;
     HANDLE h = (HANDLE)(uintptr_t)fi->fh;
     pthread_mutex_lock(&g_lock);
     IRAPISession_CeCloseHandle(g_session, h);
     pthread_mutex_unlock(&g_lock);
+    sf_log("close", path);
     return 0;
 }
 
@@ -300,6 +356,7 @@ static int sf_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 
     if (h == INVALID_HANDLE_VALUE) return -EIO;
     fi->fh = (uint64_t)(uintptr_t)h;
+    sf_log("create", path);
     return 0;
 }
 
@@ -314,6 +371,7 @@ static int sf_mkdir(const char *path, mode_t mode)
     pthread_mutex_unlock(&g_lock);
     free(wpath);
 
+    if (ok) sf_log("mkdir", path);
     return ok ? 0 : -EIO;
 }
 
@@ -327,6 +385,7 @@ static int sf_unlink(const char *path)
     pthread_mutex_unlock(&g_lock);
     free(wpath);
 
+    if (ok) sf_log("unlink", path);
     return ok ? 0 : -ENOENT;
 }
 
@@ -340,6 +399,7 @@ static int sf_rmdir(const char *path)
     pthread_mutex_unlock(&g_lock);
     free(wpath);
 
+    if (ok) sf_log("rmdir", path);
     return ok ? 0 : -ENOENT;
 }
 
@@ -357,6 +417,10 @@ static int sf_rename(const char *from, const char *to, unsigned int flags)
     pthread_mutex_unlock(&g_lock);
 
     free(wfrom); free(wto);
+    if (ok) {
+        fprintf(stderr, "[synce-fuse] rename %s → %s\n", from, to);
+        fflush(stderr);
+    }
     return ok ? 0 : -EIO;
 }
 
@@ -424,6 +488,7 @@ static int sf_utimens(const char *path, const struct timespec tv[2],
 static const struct fuse_operations sf_ops = {
     .getattr  = sf_getattr,
     .readdir  = sf_readdir,
+    .statfs   = sf_statfs,
     .open     = sf_open,
     .read     = sf_read,
     .write    = sf_write,
@@ -490,18 +555,30 @@ static void rapi_disconnect(void)
 
 /* ── RAPI watchdog ────────────────────────────────────────────────────────── */
 
+static void sigalrm_handler(int sig)
+{
+    (void)sig;
+    /* RAPI probe blocked past timeout — device gone, unmount */
+    kill(getpid(), SIGTERM);
+}
+
 static void *rapi_watchdog(void *arg)
 {
     (void)arg;
+    signal(SIGALRM, sigalrm_handler);
     while (1) {
-        sleep(3);
+        sleep(5);
+        /* If a FUSE op holds the lock, the device is alive — skip this probe */
+        if (pthread_mutex_trylock(&g_lock) != 0)
+            continue;
         STORE_INFORMATION si;
-        pthread_mutex_lock(&g_lock);
+        alarm(8); /* kill self if RAPI call hangs > 8s (device gone, TCP stalled) */
         BOOL ok = g_session &&
                   IRAPISession_CeGetStoreInformation(g_session, &si);
+        alarm(0);
         pthread_mutex_unlock(&g_lock);
         if (!ok) {
-            kill(getpid(), SIGTERM); /* triggers fuse_main exit */
+            kill(getpid(), SIGTERM);
             break;
         }
     }
@@ -550,6 +627,8 @@ int main(int argc, char *argv[])
         show_usage(argv[0]);
         return 1;
     }
+
+    synce_log_set_level(SYNCE_LOG_LEVEL_WARNING);
 
     if (rapi_connect() != 0)
         return 1;

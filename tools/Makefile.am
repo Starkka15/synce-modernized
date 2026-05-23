@@ -15,6 +15,8 @@ bin_PROGRAMS = pcp \
 	prmdir \
 	prun \
 	pstatus \
+	pcat \
+	pbackup \
 	rapiconfig \
 	pkillall \
 	pshortcut \
@@ -23,8 +25,10 @@ bin_PROGRAMS = pcp \
 	synce-registry \
 	synce-database
 
-pcp_SOURCES    = pcommon.c pcp.c
-pls_SOURCES    = pcommon.c pls.c
+pcp_SOURCES     = pcommon.c pcp.c
+pcat_SOURCES    = pcommon.c pcat.c
+pbackup_SOURCES = pcommon.c pbackup.c
+pls_SOURCES     = pcommon.c pls.c
 pmkdir_SOURCES = pcommon.c pmkdir.c
 pmv_SOURCES    = pcommon.c pmv.c
 prm_SOURCES    = pcommon.c prm.c

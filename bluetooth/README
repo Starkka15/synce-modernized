@@ -1,0 +1,27 @@
+Setting up synce-connector for Bluetooth connections isn't
+difficult, it's just not well tested, and may not
+turn out to be the 'right' way.
+
+The --enable-bluetooth-support option to configure will
+install various support files for ppp as detailed below.
+Depending on your distribution, some of these may need
+to be moved.
+
+$prefix/ppp/ip-up.d/synce-udev-bt-ipup
+$prefix/ppp/peers/synce-bt-peer
+
+
+You need to run dund with these options
+
+--listen --activesync --msdun call synce-bt-peer
+
+There is probably a method in your distro's boot
+sequence to set this to come up automatically.
+
+Finally these services must be added with 'sdptool add'
+activesync
+dun
+sp
+
+Then connect to the PC from the device with the 
+ActiveSync over bluetooth option.

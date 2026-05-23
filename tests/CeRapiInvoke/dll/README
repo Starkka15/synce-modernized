@@ -1,0 +1,10 @@
+Using the cross compiler from the VLC project:
+
+http://trac.videolan.org/vlc/file/trunk/INSTALL.wince
+
+The following warnings can be ignored:
+
+  warning: 'stdcall' attribute directive ignored
+
+  Warning: .drectve `/DEFAULTLIB:"coredll.lib" /DEFAULTLIB:"corelibc.lib" ' unrecognized
+

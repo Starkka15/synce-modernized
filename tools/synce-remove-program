@@ -1,20 +1,37 @@
 #!/bin/bash
 #
-# $Id: synce-remove-program.in 4004 2011-03-24 16:19:30Z mark_ellis $
+# synce-remove-program — uninstall a program from a Windows Mobile device
 #
-# Script to uninstall a program
-#
-# See http://www.pocketpcdn.com/qa/uninstall.html to know how it works.
-#
+# Uses unload.exe (WM2003) at its actual path \Windows\unload.exe.
+# WM5/WM6 devices may not have unload.exe; if all attempts fail, instructs
+# the user to use Settings > Remove Programs on the device.
+
 prefix=/usr/local
 exec_prefix=${prefix}
+PRUN="${exec_prefix}/bin/prun"
 
 if [ -z "$1" ]; then
-
-	echo "As parameter to this script, please enter the program name as it appears under
-Settings -> Remove programs on your Windows CE device."
-
-	exit 1
+    echo "Usage: synce-remove-program PROGRAM_NAME" >&2
+    echo "" >&2
+    echo "  PROGRAM_NAME  Name as shown in Settings > Remove Programs on the device" >&2
+    exit 1
 fi
 
-${exec_prefix}/bin/prun unload.exe "$1"
+NAME="$1"
+
+# WM2003: unload.exe lives in \Windows\
+if "$PRUN" //Windows/unload.exe "$NAME" 2>/dev/null; then
+    exit 0
+fi
+
+# WM2003 (some builds): device root
+if "$PRUN" unload.exe "$NAME" 2>/dev/null; then
+    exit 0
+fi
+
+# WM5/WM6 and anything else: no reliable RAPI uninstall path exists.
+echo "Cannot uninstall '$NAME' automatically." >&2
+echo "" >&2
+echo "This device does not support remote uninstall (unload.exe not found)." >&2
+echo "To remove the program, use Settings > Remove Programs on the device." >&2
+exit 1
