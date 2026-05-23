@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" width="22" height="22">
+  <!-- Device body -->
+  <rect x="5" y="2" width="12" height="16" rx="2" ry="2" fill="#888" stroke="#555" stroke-width="1"/>
+  <!-- Screen -->
+  <rect x="7" y="4" width="8" height="9" rx="1" fill="#bbb" stroke="#555" stroke-width="0.5"/>
+  <!-- Button -->
+  <circle cx="11" cy="15.5" r="1.2" fill="#555"/>
+  <!-- USB plug -->
+  <rect x="9.5" y="18" width="3" height="1.5" rx="0.5" fill="#555"/>
+  <!-- Disconnected dot -->
+  <circle cx="18" cy="4" r="3" fill="#cc4444" stroke="#882222" stroke-width="0.5"/>
+</svg>

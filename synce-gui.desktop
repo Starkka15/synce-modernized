@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=SynCE GUI
+Comment=Windows Mobile device manager for Dell Axim X50
+Exec=python3 /home/starkka15/synce-gui/synce-gui.py
+Icon=/home/starkka15/synce-gui/icons/synce-connected.svg
+Type=Application
+Categories=Utility;
+StartupNotify=false
